@@ -105,11 +105,13 @@ This quantity is a model-based estimand, not a directly observed biological expi
 be undefined if the trajectory approaches a plateau above the threshold, and it depends on the
 endpoint and threshold definition.
 
-For the initial COVID-19 application, one option is to anchor $c_{\mathrm{thr}}$ to the
-neutralisation level associated with 50\% protection in the logistic relationship estimated by
-\textcite{khoury2021}. The same fitted antibody curve could instead be passed through the full
-titre-to-protection relationship to obtain a protection curve $E_i(t)$. This makes explicit that
-``antibody duration'' and ``protection duration'' are related but not interchangeable.
+For the initial COVID-19 application, let $c_{\mathrm{conv}}$ denote the mean convalescent
+neutralisation level and express both $c_i(t)$ and $c_{\mathrm{thr}}$ relative to that reference.
+One option is then to anchor $c_{\mathrm{thr}}$ to the level associated with 50\% protection in the
+logistic relationship estimated by \textcite{khoury2021}. The same fitted antibody curve could
+instead be passed through the full titre-to-protection relationship to obtain a protection curve
+$E_i(t)$. This makes explicit that ``antibody duration'' and ``protection duration'' are related but
+not interchangeable.
 
 Heterogeneity creates a second distinction. The distribution of individual $T_i^*$ values is not
 equivalent to the threshold-crossing time of a population-average antibody curve. A population
@@ -223,15 +225,16 @@ This permits both individual and population targets and asks whether additional 
 compensate for sparse information within each trajectory. Population mechanistic models have used
 this type of structure in vaccine applications \parencite{pasin2019}.
 
-Table~\ref{tab:starting-values} gives tentative values for this biphasic baseline around which to
-begin discussion. They are calibration aids, not universal biological constants. In particular,
-assay units and protection thresholds are not automatically portable between studies. The
-source/basis column distinguishes published estimates from workshop modelling choices.
+Table~\ref{tab:starting-values} makes the first case study concrete by using Hogan's estimate for
+BNT162b2 after dose 3 against Delta, alongside their shared biphasic decay parameters. All antibody
+levels use the convalescent-relative scale defined above. These values are calibration aids, not
+universal biological constants; the source/basis column distinguishes published estimates from
+workshop modelling choices.
 
 \begin{table}[H]
 \centering
 \footnotesize
-\caption{Tentative starting values for the suggested biphasic COVID-19 baseline.}
+\caption{Tentative starting values for a BNT162b2 dose-3 biphasic COVID-19 baseline.}
 \label{tab:starting-values}
 \begin{tabularx}{\textwidth}{@{}
   >{\raggedright\arraybackslash}p{0.22\textwidth}
@@ -241,22 +244,22 @@ source/basis column distinguishes published estimates from workshop modelling ch
 \toprule
 Quantity & Starting value & Source / basis & Interpretation / possible variation \\
 \midrule
-Early level $c_0$ & 5000 BAU/mL & Workshop scale choice & Illustrative assay scale; consider 3000--8000 \\
+Early level $c_0$ & $0.92c_{\mathrm{conv}}$ & \textcite{hogan2023} & BNT162b2 dose 3 against Delta; 95\% CrI 0.71--1.19 \\
 Log-error SD $\sigma_{\log}$ & 0.20 & Workshop noise choice & Explore lower and higher assay variability \\
 Fast half-life $h_1$ & 35 days & \textcite{hogan2023} & Early contraction; tentative range 25--60 days \\
 Slow half-life $h_2$ & 581 days & \textcite{hogan2023} & Highest-priority tail sensitivity; consider 250--900 days \\
 Switching time $t_s$ & 75 days & \textcite{hogan2023} & Equal weighted components at this time \\
 Weights $w_1:w_2$ & about 80:20 & Derived from \textcite{hogan2023} & From $h_1$, $h_2$ and $t_s$ in Equation~\ref{eq:biphasic} \\
-Protection anchor $c_{\mathrm{thr}}$ & 20.2\% / 3.0\% & \textcite{khoury2021} & Convalescent neutralisation for 50\% symptomatic / severe protection \\
+Protection anchor $c_{\mathrm{thr}}$ & 0.202 / 0.030 & \textcite{khoury2021} & Multiples of $c_{\mathrm{conv}}$ for 50\% symptomatic / severe protection \\
 Peak / rate log-SD $\omega_0/\omega_k$ & 0.30 / 0.25 & Workshop heterogeneity choice & Moderate between-participant variation \\
 Peak--rate correlation $\rho_{0k}$ & $-0.30$ & Workshop correlation choice & Include zero as a comparison \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The workshop choices in the table are deliberately round simulation defaults, not estimates
-attributed to the cited studies. The workshop may choose a different assay normalisation or tail
-calibration before any headline analysis.
+The uncited workshop choices in the table are deliberately round simulation defaults, not
+literature estimates. The workshop may choose a different vaccine, dose, assay normalisation or
+tail calibration before any headline analysis.
 
 \section{A possible analysis programme}\label{sec:analysis}
 
@@ -314,9 +317,10 @@ against treating any single threshold as universal \parencite{feng2021}.
 levels can function as a protective correlate for COVID-19 vaccines, strengthening the case for
 the marker-based starting point while not establishing causality by itself \parencite{earle2021}.
 
-\textbf{Hogan et al. (2023).} This model-based study provides the tentative COVID-19 biphasic
-calibration---including fast and slow half-lives and a switching time---and illustrates how immune
-kinetics can be connected to longer-term effectiveness against variants \parencite{hogan2023}.
+\textbf{Hogan et al. (2023).} This model-based study provides vaccine- and dose-specific initial
+immunity levels and the tentative COVID-19 biphasic calibration---including fast and slow
+half-lives and a switching time---and illustrates how immune kinetics can be connected to
+longer-term effectiveness against variants \parencite{hogan2023}.
 
 \textbf{Nishiyama et al. (2023).} This study extends an mRNA-stimulus antibody model to a booster
 dose and infection history, showing how repeated immune exposures can alter response duration and
