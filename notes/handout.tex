@@ -115,18 +115,24 @@ single family needs to be endorsed at the outset.
 This is the simplest reference model. The log concentration has a constant slope and
 $T^*=k^{-1}\log(c_0/c_{\mathrm{thr}})$ when $c_0>c_{\mathrm{thr}}$. It can be identified from
 relatively short follow-up if the trajectory is truly exponential, but it extrapolates the early
-slope indefinitely when that assumption is wrong.
+slope indefinitely when that assumption is wrong. Single-half-life summaries are common in
+analyses of COVID-19 neutralisation waning \parencite{khoury2021,cromer2022}.
 
 \subsection*{Biphasic exponential}
-\begin{equation}
-  c(t)=A e^{-k_1t}+B e^{-k_2t}, \qquad k_1>k_2>0.
+We use the smooth parameterisation of \textcite{hogan2023} from the outset:
+\begin{align}
+  c(t)&=c_0\{w_1e^{-k_1t}+w_2e^{-k_2t}\},
+  & k_r&=\frac{\log 2}{h_r},\quad r\in\{1,2\},\quad h_1<h_2, \\
+  D&=e^{-k_1t_s}+e^{-k_2t_s},
+  & w_1&=\frac{e^{-k_2t_s}}{D},\qquad
+    w_2=\frac{e^{-k_1t_s}}{D}.
   \label{eq:biphasic}
-\end{equation}
+\end{align}
 The fast component can represent contraction of short-lived antibody-secreting cells and the slow
 component a longer-lived population. This family is common in vaccine-antibody studies
-\parencite{white2015,hogan2023}. Its slow rate governs long-term duration but may be weakly
-identified while the fast component dominates. A smooth parameterisation in terms of peak level,
-fast and slow half-lives, and a switching time is convenient for simulation.
+\parencite{white2015,hogan2023}. The weights ensure $c(0)=c_0$ and make the two weighted
+components equal at switching time $t_s$. The slow half-life $h_2$ governs long-term duration but
+may be weakly identified while the fast component dominates.
 
 \subsection*{Power-law decay}
 \begin{equation}
@@ -143,6 +149,8 @@ decelerating decay rather than a constant half-life \parencite{amanna2007}.
 Here the long-term level is non-zero. A crossing exists only when
 $A_\infty<c_{\mathrm{thr}}$. Short data may not distinguish a genuine plateau from a very slow
 decline, making ``never crosses'' an informative possibility rather than a numerical failure.
+Long-term measurements showing durable antibody levels motivate this alternative
+\parencite{amanna2007}.
 
 \subsection*{Mechanistic antibody-production model}
 A richer generating model can represent short- and long-lived antibody-secreting cells and
@@ -169,11 +177,22 @@ starting point is multiplicative log-normal error,
 Lower and upper quantification limits can be represented as censoring rather than replacing
 censored observations by exact boundary values.
 
-Between-participant variation can be introduced through log-normal random effects on peak level
-and decay rates, with possible correlation between them. This permits both individual and
-population targets and asks whether additional participants compensate for sparse information
-within each trajectory. Population mechanistic models have used this type of structure in vaccine
-applications \parencite{pasin2019}.
+Between-participant variation can be introduced through correlated log-normal random effects on
+peak level and the slow decay rate, for example
+\begin{align}
+  c_{0i}&=c_0e^{\eta_{0i}}, & k_{2i}&=k_2e^{\eta_{ki}}, \\
+  \begin{pmatrix}\eta_{0i}\\ \eta_{ki}\end{pmatrix}
+  &\sim N_2\!\left[
+    \begin{pmatrix}0\\0\end{pmatrix},
+    \begin{pmatrix}
+      \omega_0^2 & \rho_{0k}\omega_0\omega_k \\
+      \rho_{0k}\omega_0\omega_k & \omega_k^2
+    \end{pmatrix}\right].
+  \label{eq:heterogeneity}
+\end{align}
+This permits both individual and population targets and asks whether additional participants
+compensate for sparse information within each trajectory. Population mechanistic models have used
+this type of structure in vaccine applications \parencite{pasin2019}.
 
 Table~\ref{tab:starting-values} gives tentative values around which to begin discussion. They are
 calibration aids, not universal biological constants. In particular, assay units and protection
@@ -190,13 +209,13 @@ Quantity & Starting value & Interpretation / possible variation \\
 \midrule
 Early level $c_0$ & 5000 BAU/mL & Illustrative assay scale; consider 3000--8000 \\
 Log-error SD $\sigma_{\log}$ & 0.20 & Explore lower and higher assay variability \\
-Fast half-life & 35 days & Early contraction; tentative range 25--60 days \\
-Slow half-life & 581 days & Highest-priority tail sensitivity; consider 250--900 days \\
-Switching time & 75 days & Tentative transition between fast and slow components \\
-Fast:slow contribution & about 80:20 & Implied by the smooth Hogan parameterisation \\
-Protection anchor & 20.2\% / 3.0\% & Convalescent neutralisation for 50\% symptomatic / severe protection \\
-Peak / rate log-SD & 0.30 / 0.25 & Moderate between-participant heterogeneity \\
-Peak--rate correlation & $-0.30$ & Plausible starting value; include zero as a comparison \\
+Fast half-life $h_1$ & 35 days & Early contraction; tentative range 25--60 days \\
+Slow half-life $h_2$ & 581 days & Highest-priority tail sensitivity; consider 250--900 days \\
+Switching time $t_s$ & 75 days & Equal weighted components at this time \\
+Weights $w_1:w_2$ & about 80:20 & Implied by $h_1$, $h_2$ and $t_s$ in Equation~\ref{eq:biphasic} \\
+Protection anchor $c_{\mathrm{thr}}$ & 20.2\% / 3.0\% & Convalescent neutralisation for 50\% symptomatic / severe protection \\
+Peak / rate log-SD $\omega_0/\omega_k$ & 0.30 / 0.25 & Moderate between-participant heterogeneity \\
+Peak--rate correlation $\rho_{0k}$ & $-0.30$ & Plausible starting value; include zero as a comparison \\
 \bottomrule
 \end{tabularx}
 \end{table}
