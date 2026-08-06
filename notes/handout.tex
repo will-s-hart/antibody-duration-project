@@ -118,8 +118,9 @@ below a chosen level. The workshop should keep individual and population questio
 
 \section{Candidate trajectory models}\label{sec:models}
 
-The candidate set is intended to expose different assumptions about the unobserved tail. No
-single family needs to be endorsed at the outset.
+The candidate set is intended to expose different assumptions about the unobserved tail. We
+suggest the biphasic exponential as a common reference model for the first analyses, while
+retaining the other families as substantive alternatives.
 
 \subsection*{Single exponential}
 \begin{equation}
@@ -131,8 +132,14 @@ relatively short follow-up if the trajectory is truly exponential, but it extrap
 slope indefinitely when that assumption is wrong. Single-half-life summaries are common in
 analyses of COVID-19 neutralisation waning \parencite{khoury2021,cromer2022}.
 
-\subsection*{Biphasic exponential}
-We use the smooth parameterisation of \textcite{hogan2023} from the outset:
+\subsection*{Biphasic exponential (suggested default)}
+Biphasic structures have been used successfully to describe vaccine-antibody kinetics in
+established analyses, representing rapid initial contraction followed by a slower persistent
+component \parencite{white2015,hogan2023}. We therefore suggest this family as the initial
+reference model: its parameters have a useful biological interpretation, its long-term driver is
+explicit, and a published COVID-19 calibration is available. This is a practical starting point
+for comparison, rather than a claim that biphasic decay will be preferred for every dataset. We
+use the smooth parameterisation of \textcite{hogan2023} from the outset:
 \begin{align}
   c(t)&=c_0\{w_1e^{-k_1t}+w_2e^{-k_2t}\},
   & k_r&=\frac{\log 2}{h_r},\quad r\in\{1,2\},\quad h_1<h_2, \\
@@ -142,8 +149,7 @@ We use the smooth parameterisation of \textcite{hogan2023} from the outset:
   \label{eq:biphasic}
 \end{align}
 The fast component can represent contraction of short-lived antibody-secreting cells and the slow
-component a longer-lived population. This family is common in vaccine-antibody studies
-\parencite{white2015,hogan2023}. The weights ensure $c(0)=c_0$ and make the two weighted
+component a longer-lived population. The weights ensure $c(0)=c_0$ and make the two weighted
 components equal at switching time $t_s$. The slow half-life $h_2$ governs long-term duration but
 may be weakly identified while the fast component dominates.
 
@@ -187,7 +193,7 @@ vanished, however, its long-term tail tends towards a single exponential, so it 
 testing dose-response dynamics and heterogeneous trajectories than to replacing the richer
 slow-tail generator above.
 
-\section{Observation and population parameterisation}\label{sec:parameterisation}
+\section{Observation model and biphasic population parameterisation}\label{sec:parameterisation}
 
 Observed assays are naturally treated as noisy measurements of a latent positive curve. A simple
 starting point is multiplicative log-normal error,
@@ -197,10 +203,11 @@ starting point is multiplicative log-normal error,
   \label{eq:observation}
 \end{equation}
 Lower and upper quantification limits can be represented as censoring rather than replacing
-censored observations by exact boundary values.
+censored observations by exact boundary values. This observation model can be used with any of
+the candidate trajectories in Section~\ref{sec:models}.
 
-Between-participant variation can be introduced through correlated log-normal random effects on
-peak level and the slow decay rate, for example
+For the suggested biphasic reference model, between-participant variation can be introduced
+through correlated log-normal random effects on peak level and the slow decay rate, for example
 \begin{align}
   c_{0i}&=c_0e^{\eta_{0i}}, & k_{2i}&=k_2e^{\eta_{ki}}, \\
   \begin{pmatrix}\eta_{0i}\\ \eta_{ki}\end{pmatrix}
@@ -216,35 +223,40 @@ This permits both individual and population targets and asks whether additional 
 compensate for sparse information within each trajectory. Population mechanistic models have used
 this type of structure in vaccine applications \parencite{pasin2019}.
 
-Table~\ref{tab:starting-values} gives tentative values around which to begin discussion. They are
-calibration aids, not universal biological constants. In particular, assay units and protection
-thresholds are not automatically portable between studies.
+Table~\ref{tab:starting-values} gives tentative values for this biphasic baseline around which to
+begin discussion. They are calibration aids, not universal biological constants. In particular,
+assay units and protection thresholds are not automatically portable between studies. The
+source/basis column distinguishes published estimates from workshop modelling choices.
 
 \begin{table}[H]
 \centering
-\small
-\caption{Tentative starting values for a COVID-19 baseline.}
+\footnotesize
+\caption{Tentative starting values for the suggested biphasic COVID-19 baseline.}
 \label{tab:starting-values}
-\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\begin{tabularx}{\textwidth}{@{}
+  >{\raggedright\arraybackslash}p{0.22\textwidth}
+  >{\raggedright\arraybackslash}p{0.16\textwidth}
+  >{\raggedright\arraybackslash}p{0.23\textwidth}
+  >{\raggedright\arraybackslash}X@{}}
 \toprule
-Quantity & Starting value & Interpretation / possible variation \\
+Quantity & Starting value & Source / basis & Interpretation / possible variation \\
 \midrule
-Early level $c_0$ & 5000 BAU/mL & Illustrative assay scale; consider 3000--8000 \\
-Log-error SD $\sigma_{\log}$ & 0.20 & Explore lower and higher assay variability \\
-Fast half-life $h_1$ & 35 days & Early contraction; tentative range 25--60 days \\
-Slow half-life $h_2$ & 581 days & Highest-priority tail sensitivity; consider 250--900 days \\
-Switching time $t_s$ & 75 days & Equal weighted components at this time \\
-Weights $w_1:w_2$ & about 80:20 & Implied by $h_1$, $h_2$ and $t_s$ in Equation~\ref{eq:biphasic} \\
-Protection anchor $c_{\mathrm{thr}}$ & 20.2\% / 3.0\% & Convalescent neutralisation for 50\% symptomatic / severe protection \\
-Peak / rate log-SD $\omega_0/\omega_k$ & 0.30 / 0.25 & Moderate between-participant heterogeneity \\
-Peak--rate correlation $\rho_{0k}$ & $-0.30$ & Plausible starting value; include zero as a comparison \\
+Early level $c_0$ & 5000 BAU/mL & Workshop scale choice & Illustrative assay scale; consider 3000--8000 \\
+Log-error SD $\sigma_{\log}$ & 0.20 & Workshop noise choice & Explore lower and higher assay variability \\
+Fast half-life $h_1$ & 35 days & \textcite{hogan2023} & Early contraction; tentative range 25--60 days \\
+Slow half-life $h_2$ & 581 days & \textcite{hogan2023} & Highest-priority tail sensitivity; consider 250--900 days \\
+Switching time $t_s$ & 75 days & \textcite{hogan2023} & Equal weighted components at this time \\
+Weights $w_1:w_2$ & about 80:20 & Derived from \textcite{hogan2023} & From $h_1$, $h_2$ and $t_s$ in Equation~\ref{eq:biphasic} \\
+Protection anchor $c_{\mathrm{thr}}$ & 20.2\% / 3.0\% & \textcite{khoury2021} & Convalescent neutralisation for 50\% symptomatic / severe protection \\
+Peak / rate log-SD $\omega_0/\omega_k$ & 0.30 / 0.25 & Workshop heterogeneity choice & Moderate between-participant variation \\
+Peak--rate correlation $\rho_{0k}$ & $-0.30$ & Workshop correlation choice & Include zero as a comparison \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The kinetic starting values draw principally on the model-based analysis of
-\textcite{hogan2023}; the protection anchors come from \textcite{khoury2021}. The workshop may
-choose a different assay normalisation or tail calibration before any headline analysis.
+The workshop choices in the table are deliberately round simulation defaults, not estimates
+attributed to the cited studies. The workshop may choose a different assay normalisation or tail
+calibration before any headline analysis.
 
 \section{A possible analysis programme}\label{sec:analysis}
 
