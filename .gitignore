@@ -125,10 +125,8 @@ ipython_config.py
 .pdm-python
 .pdm-build/
 
-# Pixi: normally retain pixi.lock; ignore the generated environment.
-# pixi.lock
-.pixi/*
-!.pixi/config.toml
+# Pixi: retain pixi.lock; ignore the generated environment.
+/.pixi/
 
 # PEP 582
 __pypackages__/
