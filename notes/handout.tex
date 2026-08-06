@@ -40,30 +40,30 @@
 \vspace{-2.2em}
 
 \begin{abstract}
-How much longitudinal antibody data are needed before we can make a credible statement about
-the duration of vaccine protection? This workshop project will approach that question through
+How much longitudinal antibody data must a vaccine trial accumulate before it can make a credible
+statement about the duration of protection? At a planned review, this becomes a practical design
+question: is the evidence sufficient for durability follow-up to conclude, or is further observation
+still likely to change the answer? This workshop project will approach that question through
 simulation and model-based extrapolation. The working application is COVID-19 vaccination, for
 which both antibody-kinetics models and quantitative links between neutralisation and protection
-are available. The broader aim is to understand a recurring design problem: the long-term feature
-of a biological curve is often the feature least informed by a short study. The choices below are
-starting points for discussion, not a fixed analysis protocol.
+are available. The choices below are starting points for discussion, not a fixed analysis protocol.
 \end{abstract}
 
 \section{Project question and aims}\label{sec:aims}
 
-Consider a vaccine study that measures an antibody marker repeatedly after vaccination. Antibody
-levels often fall quickly at first and more slowly later. We would like to estimate when the
-marker will fall below a protection-relevant level, even when that crossing occurs beyond the
-observed follow-up. Immune correlates require careful terminology---a correlate can predict
-protection without being its sole cause---but they can still support useful quantitative
+Consider a vaccine trial, or a long-term extension, that measures an antibody marker repeatedly
+after vaccination. Antibody levels often fall quickly at first and more slowly later. We would like
+to estimate when the marker will fall below a protection-relevant level, even when that crossing
+occurs beyond the observed follow-up. Immune correlates require careful terminology---a correlate
+can predict protection without being its sole cause---but they can still support useful quantitative
 predictions \parencite{plotkin2012,earle2021}.
 
 The central question is therefore:
 
 \begin{quote}
-\emph{How long must participants be followed, and how informative must their longitudinal
-measurements be, before the duration of antibody-associated protection can be estimated
-credibly?}
+\emph{At a planned trial review, how long must participants have been followed, and how informative
+must their longitudinal measurements be, before the duration of antibody-associated protection can
+be estimated credibly enough to decide whether further durability follow-up is needed?}
 \end{quote}
 
 The project has four linked aims:
@@ -71,8 +71,21 @@ The project has four linked aims:
   \item describe plausible short- and long-term antibody trajectories;
   \item quantify how much extrapolation is being asked of a fitted model;
   \item understand when apparently similar fits imply very different durations of protection;
-  \item translate those findings into practical guidance for longitudinal study design.
+  \item translate those findings into practical guidance on the duration and timing of trial
+        follow-up.
 \end{enumerate}
+
+The distinction between concluding durability follow-up and stopping all trial activity is
+important: safety surveillance, clinical endpoints and regulatory commitments may independently
+require continued follow-up. The present project concerns the information available for the
+durability question.
+
+This decision problem is clearest when protection is expected to last for years. The pivotal
+Shingrix trials followed participants for roughly three to four years, while their long-term
+extension ultimately assessed efficacy and immunogenicity through 11 years after vaccination
+\parencite{strezova2025}. Such studies show the value of long follow-up, but also motivate asking at
+which earlier review points the accumulated marker data can already support a reliable conclusion,
+and when additional observations are still needed to resolve the tail.
 
 COVID-19 provides a well-developed starting point: neutralisation is predictive of protection,
 and published work connects titres, variants, boosting and vaccine effectiveness
@@ -165,6 +178,15 @@ or replenishment can generate an even slower tail. Related models have been deve
 cell dynamics and vaccine responses \parencite{andraud2012,pasin2019}. Such a model may be most
 useful as a deliberately richer data-generating mechanism rather than as the default fitted model.
 
+A complementary later-stage generator could use the semi-mechanistic model developed across a
+series of COVID-19 studies \parencite{nishiyama2023,nakamura2024,park2025,hart2025}. It links a
+decaying mRNA stimulus to delayed, nonlinear antibody production and antibody loss, and can
+represent boosting, infection history and between-participant variation. Public code and derived
+parameter estimates make it a practical calibration resource. Once vaccine stimulation has
+vanished, however, its long-term tail tends towards a single exponential, so it is better suited to
+testing dose-response dynamics and heterogeneous trajectories than to replacing the richer
+slow-tail generator above.
+
 \section{Observation and population parameterisation}\label{sec:parameterisation}
 
 Observed assays are naturally treated as noisy measurements of a latent positive curve. A simple
@@ -227,16 +249,19 @@ choose a different assay normalisation or tail calibration before any headline a
 \section{A possible analysis programme}\label{sec:analysis}
 
 A simulation-first programme would create a full longitudinal dataset from a known trajectory,
-then reveal only the portion that a candidate study would have observed. Each candidate model
-could be fitted to the reduced data and extrapolated to $T^*$. Because the generating truth is
-known, the exercise can separate uncertainty from confident misspecification.
+then reveal the portions available at successive planned trial reviews. Each candidate model could
+be fitted to the data available at each review and extrapolated to $T^*$. Because the generating
+truth is known, the exercise can separate uncertainty from confident misspecification and ask when
+a decision to conclude durability follow-up would have been well supported.
 
 A natural progression is:
 \begin{enumerate}
   \item establish a transparent homogeneous baseline in which a biphasic model is fitted to
         biphasic data;
+  \item reveal successively longer follow-up windows and examine when conclusions about duration
+        become stable, or only appear stable;
   \item fit all candidate families to the same truncated data to expose disagreement in the tail;
-  \item generate data from a richer mechanistic model and ask whether simple fitted models remain
+  \item generate data from richer mechanistic models and ask whether simple fitted models remain
         useful;
   \item introduce participant heterogeneity and compare individual with population duration;
   \item if useful, map antibody trajectories to symptomatic and severe-disease protection or
@@ -245,8 +270,9 @@ A natural progression is:
 
 Points for discussion include which duration is clinically meaningful; how strongly to privilege
 COVID-19; which model families and parameterisations are worth pursuing; how inference and study
-design should be handled; which comparisons would be most informative; and what degree of
-extrapolation would be acceptable to a trial designer.
+design should be handled; what evidence should be sufficient to conclude durability follow-up;
+which comparisons would be most informative; and what degree of extrapolation would be acceptable
+to a trial designer.
 
 \section{How the literature informs the project}\label{sec:literature-guide}
 
@@ -280,9 +306,34 @@ the marker-based starting point while not establishing causality by itself \pare
 calibration---including fast and slow half-lives and a switching time---and illustrates how immune
 kinetics can be connected to longer-term effectiveness against variants \parencite{hogan2023}.
 
+\textbf{Nishiyama et al. (2023).} This study extends an mRNA-stimulus antibody model to a booster
+dose and infection history, showing how repeated immune exposures can alter response duration and
+providing a compact semi-mechanistic alternative for later simulations \parencite{nishiyama2023}.
+
+\textbf{Nakamura et al. (2024).} Dense measurements from a small calibration cohort and sparse
+measurements from more than 2,400 participants are combined to reconstruct heterogeneous
+individual trajectories after primary vaccination. The fitted parameter distributions are a useful
+COVID-19 calibration source, although the underlying clinical dataset is access-restricted
+\parencite{nakamura2024}.
+
+\textbf{Park et al. (2025).} Longitudinal trajectories after primary and booster vaccination are
+stratified into durable, vulnerable and rapid-declining response patterns, with rapid decline linked
+to earlier subsequent infection. This makes heterogeneity clinically relevant rather than merely a
+statistical complication \parencite{park2025}.
+
+\textbf{Hart et al. (2025).} The same individual-level antibody model is linked to susceptibility
+and population outbreak risk. Its open code and derived parameter estimates provide an immediately
+usable resource for simulation and calibration \parencite{hart2025}.
+
 \textbf{White et al. (2015).} The RTS,S malaria analysis is the closest published analogue to the
 project's intended chain: it uses biphasic antibody kinetics and links the resulting waning marker
 to duration of vaccine efficacy \parencite{white2015}.
+
+\textbf{Strezova et al. (2025).} The final Shingrix long-term follow-up analysis demonstrates the
+practical scale of the design problem: an extension of pivotal phase 3 trials followed more than
+7,000 participants and assessed protection through 11 years. It provides a concrete setting in
+which the value of additional durability data must be weighed against prolonged follow-up
+\parencite{strezova2025}.
 
 \textbf{Andraud et al. (2012).} The nested plasma-cell and antibody models provide a clear
 mechanistic template for generating trajectories on several biological time scales and for asking
