@@ -13,7 +13,7 @@
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 \usepackage[backend=biber,style=authoryear,maxcitenames=2,maxbibnames=6,
-            doi=true,isbn=false,url=false]{biblatex}
+doi=true,isbn=false,url=false]{biblatex}
 
 \geometry{margin=24mm}
 \addbibresource{references.bib}
@@ -31,7 +31,7 @@
 }
 
 \title{\textbf{Duration of antibody protection project}\\[0.35em]
-       \large Nagoya-Oxford workshop 2026}
+\large Nagoya-Oxford workshop 2026}
 \author{}
 \date{August 2026}
 
@@ -39,329 +39,487 @@
 \maketitle
 \vspace{-2.2em}
 
-\begin{abstract}
-How much longitudinal antibody data must a vaccine trial accumulate before it can make a credible
-statement about the duration of protection? At a planned review, this becomes a practical design
-question: is the evidence sufficient for durability follow-up to conclude, or is further observation
-still likely to change the answer? This workshop project will approach that question through
-simulation and model-based extrapolation. The working application is COVID-19 vaccination, for
-which both antibody-kinetics models and quantitative links between neutralisation and protection
-are available. The choices below are starting points for discussion, not a fixed analysis protocol.
-\end{abstract}
-
 \section{Project question and aims}\label{sec:aims}
 
-Consider a vaccine trial, or a long-term extension, that measures an antibody marker repeatedly
-after vaccination. Antibody levels often fall quickly at first and more slowly later. We would like
-to estimate when the marker will fall below a protection-relevant level, even when that crossing
-occurs beyond the observed follow-up. Immune correlates require careful terminology---a correlate
-can predict protection without being its sole cause---but they can still support useful quantitative
-predictions \parencite{plotkin2012,earle2021}.
-
-The central question is therefore:
+Consider a vaccine trial, or its long-term extension, in which an
+antibody marker is measured repeatedly after vaccination. Antibody
+levels often fall quickly at first and then more slowly. We want to
+estimate when the marker will fall below a level associated with
+protection, even if that point lies beyond the period observed so far.
+This creates a practical decision at each planned trial review:
 
 \begin{quote}
-\emph{At a planned trial review, how long must participants have been followed, and how informative
-must their longitudinal measurements be, before the duration of antibody-associated protection can
-be estimated credibly enough to decide whether further durability follow-up is needed?}
+  \emph{Given the number and timing of the measurements collected so
+    far, how well can we estimate the duration of antibody-associated
+  protection, and how much would we gain from further follow-up?}
 \end{quote}
 
-The project has four linked aims:
+The project has two core aims, followed by two extensions:
 \begin{enumerate}
-  \item describe plausible short- and long-term antibody trajectories;
-  \item quantify how much extrapolation is being asked of a fitted model;
-  \item understand when apparently similar fits imply very different durations of protection;
-  \item translate those findings into practical guidance on the duration and timing of trial
-        follow-up.
+  \item under a known trajectory model, determine how well its
+    parameters and the duration of protection can be identified as the
+    length and frequency of follow-up vary;
+  \item when the trajectory model is unknown, quantify the additional
+    uncertainty from considering several plausible long-term patterns;
+  \item examine how differences between participants affect these
+    results and the balance between recruiting more participants and
+    measuring each participant more often;
+  \item turn the findings into practical guidance on how long, and how
+    often, participants should be followed.
 \end{enumerate}
 
-The distinction between concluding durability follow-up and stopping all trial activity is
-important: safety surveillance, clinical endpoints and regulatory commitments may independently
-require continued follow-up. The present project concerns the information available for the
-durability question.
+Ending follow-up for this durability question is not the same as
+ending all trial activity. Safety surveillance, clinical endpoints and
+regulatory commitments may require the trial to continue for other
+reasons. This project asks only when enough information has been
+collected to answer the durability question.
 
-This decision problem is clearest when protection is expected to last for years. The pivotal
-Shingrix trials followed participants for roughly three to four years, while their long-term
-extension ultimately assessed efficacy and immunogenicity through 11 years after vaccination
-\parencite{strezova2025}. Such studies show the value of long follow-up, but also motivate asking at
-which earlier review points the accumulated marker data can already support a reliable conclusion,
-and when additional observations are still needed to resolve the tail.
+The problem is most apparent when protection is expected to last for
+years. The pivotal Shingrix trials followed participants for roughly
+three to four years, and their long-term extension ultimately assessed
+efficacy and immunogenicity up to 11 years after vaccination
+\parencite{strezova2025}. Such studies show the value of long-term
+follow-up. They also raise a practical question: could the antibody
+data available at an earlier review already have supported a reliable
+conclusion, or were later measurements needed to establish the
+long-term pattern?
 
-COVID-19 provides a well-developed starting point: neutralisation is predictive of protection,
-and published work connects titres, variants, boosting and vaccine effectiveness
-\parencite{khoury2021,cromer2022,gilbert2022,feng2021}. Whether the same framework transfers to
-other pathogens, assays and types of immune marker is deliberately left open for the workshop.
+Protection after COVID-19 vaccination or infection usually wanes over
+months rather than years. Even so, COVID-19 is a useful first case
+study: neutralisation predicts protection, and published studies link
+antibody titres with variants, boosting and vaccine effectiveness
+\parencite{khoury2021,cromer2022,gilbert2022,feng2021}. We can
+therefore develop and test the methods in a comparatively rich setting
+before potentially applying them to pathogens for which protection may last for
+years but the data, or the evidence for an immune correlate, are more
+limited.
 
-\section{What do we mean by duration of protection?}\label{sec:estimand}
+\section{Defining duration of protection}\label{sec:estimand}
 
-Let $c_i(t)$ denote the latent antibody concentration for participant $i$ at time $t$, and let
-$c_{\mathrm{thr}}$ be a protection-relevant threshold on the same assay scale. A natural
-individual-level target is the first threshold-crossing time
+Let $c_i(t)$ denote the underlying level of the antibody marker for
+participant $i$ at time $t$. The marker could be a neutralisation
+titre, a binding-antibody concentration or another assay measurement.
+Let $c_{\mathrm{thr}}$ denote a protection-relevant threshold on the
+same scale. We use the first time the marker crosses this threshold as
+an indication of the participant's duration of protection:
 \begin{equation}
   T_i^* = \inf\{t\geq 0 : c_i(t)\leq c_{\mathrm{thr}}\}.
   \label{eq:tstar}
 \end{equation}
-This quantity is a model-based estimand, not a directly observed biological expiry date. It can
-be undefined if the trajectory approaches a plateau above the threshold, and it depends on the
-endpoint and threshold definition.
+We note that this quantity depends on how protection and the
+threshold are defined, and
+that it has no finite value if the antibody level settles above the
+threshold.
 
-For the initial COVID-19 application, let $c_{\mathrm{conv}}$ denote the mean convalescent
-neutralisation level and express both $c_i(t)$ and $c_{\mathrm{thr}}$ relative to that reference.
-One option is then to anchor $c_{\mathrm{thr}}$ to the level associated with 50\% protection in the
-logistic relationship estimated by \textcite{khoury2021}. The same fitted antibody curve could
-instead be passed through the full titre-to-protection relationship to obtain a protection curve
-$E_i(t)$. This makes explicit that ``antibody duration'' and ``protection duration'' are related but
-not interchangeable.
+In the initial COVID-19 application, $c_i(t)$ and $c_{\mathrm{thr}}$
+refer specifically to neutralising-antibody titres. Let
+$c_{\mathrm{conv}}$ be the mean neutralisation level among
+convalescent people, and divide titres by this reference, so that the
+mean convalescent level is 1. One option is to set
+$c_{\mathrm{thr}}$ to the relative titre that
+\textcite{khoury2021} associated with 50\% protection. Alternatively,
+we could use their full relationship between titre and protection to
+convert the fitted antibody trajectory into a protection curve
+$E_i(t)$. The latter approach makes clear that antibody persistence
+and protection are related but are not the same thing. Antibody
+markers can provide useful quantitative predictions of protection
+even though they capture only part of the underlying immune response
+\parencite{plotkin2012,earle2021}.
 
-Heterogeneity creates a second distinction. The distribution of individual $T_i^*$ values is not
-equivalent to the threshold-crossing time of a population-average antibody curve. A population
-target might instead be the time at which the fraction of people still above the threshold falls
-below a chosen level. The workshop should keep individual and population questions separate.
+Differences between participants create a further distinction. The
+distribution of their individual $T_i^*$ values is not the same as
+the crossing time calculated from an average antibody curve. A useful
+population measure might instead be the time at which the proportion
+of people still above the threshold falls below a chosen value. A
+later stage of the project will examine both the individual and
+population questions.
 
-\section{Candidate trajectory models}\label{sec:models}
+\section{Proposed analysis programme}\label{sec:analysis}
 
-The candidate set is intended to expose different assumptions about the unobserved tail. We
-suggest the biphasic exponential as a common reference model for the first analyses, while
-retaining the other families as substantive alternatives.
+The central idea is to simulate complete antibody histories for a set
+of participants and recreate the information that would have been
+available at a series of trial reviews. At each review, we would hide
+all later measurements, fit one or more models to the data collected
+by that point, and estimate $T^*$. Because the complete simulated
+histories and generating models are known, we can first isolate how
+much information the trial design provides and then quantify the
+additional uncertainty that arises when the correct model is unknown.
 
-\subsection*{Single exponential}
+The workshop should first agree on the clinically relevant quantity
+and on what result would justify ending durability follow-up. This
+requires an acceptable level of uncertainty, an acceptable risk of a
+wrong decision, and a limit on extrapolation beyond the observed data.
+We should also decide whether COVID-19 is primarily a worked example
+or the main application.
+
+The work could then proceed in three parts:
+\begin{enumerate}
+  \item \textbf{Known trajectory model: parameter identifiability.}
+    Begin with a biphasic model used both to generate and fit the data.
+    Vary the review date, visit schedule, sample size, assay noise and
+    quantification limits. At each review, assess how well the model
+    parameters and $T^*$ are identified. This isolates the information
+    provided by the amount and pattern of observation.
+
+  \item \textbf{Unknown trajectory model: model uncertainty.}
+    Generate data from each plausible trajectory in turn, and later from
+    one of the more detailed biological models. Fit the full set of
+    candidate models without assuming which is correct. At each review,
+    separate the uncertainty within each fitted model from the
+    uncertainty arising from the choice of model, and assess how both
+    affect estimation of $T^*$.
+
+  \item \textbf{Extensions and practical interpretation.} Allow
+    participants to differ in their peak antibody levels and rates of
+    decline; compare individual and population outcomes; and compare
+    the value of measuring more participants with that of measuring each
+    participant more often. If useful, convert antibody trajectories
+    into protection against symptomatic and severe disease, and apply
+    the same workflow to a suitable open dataset.
+\end{enumerate}
+
+The main output would be a set of conditions under which estimates of
+duration are reliable enough to inform follow-up decisions. These
+conditions would distinguish limitations caused by insufficient data
+under a known model from those caused by uncertainty about the model
+itself.
+
+\section{Models of antibody decline}\label{sec:models}
+
+The analysis requires two kinds of model. Relatively simple models
+will be fitted to the measurements available at each trial review.
+More detailed biological models can then generate test data with
+features that the fitted models may not capture. Keeping these roles
+separate makes it possible to ask whether a simple analysis remains
+useful when its assumptions are not exactly true.
+
+\subsection*{Models to fit}
+
+Each fitted model makes a different assumption about what happens
+after follow-up ends. We suggest using the biphasic exponential as the
+reference for the first analyses, while keeping the other models as
+credible alternatives.
+
+\subsubsection*{Single exponential}
 \begin{equation}
   c(t)=c_0e^{-kt}.
 \end{equation}
-This is the simplest reference model. The log concentration has a constant slope and
-$T^*=k^{-1}\log(c_0/c_{\mathrm{thr}})$ when $c_0>c_{\mathrm{thr}}$. It can be identified from
-relatively short follow-up if the trajectory is truly exponential, but it extrapolates the early
-slope indefinitely when that assumption is wrong. Single-half-life summaries are common in
-analyses of COVID-19 neutralisation waning \parencite{khoury2021,cromer2022}.
+This is the simplest model. The log concentration falls at a constant
+rate, and $T^*=k^{-1}\log(c_0/c_{\mathrm{thr}})$ when
+$c_0>c_{\mathrm{thr}}$. If antibody levels really do follow this
+pattern, relatively short follow-up may be enough to estimate the
+curve. If they do not, the model wrongly extends the initial rate of
+decline indefinitely. Describing COVID-19 neutralisation in terms of a
+single half-life is nevertheless common
+\parencite{khoury2021,cromer2022}.
 
-\subsection*{Biphasic exponential (suggested default)}
-Biphasic structures have been used successfully to describe vaccine-antibody kinetics in
-established analyses, representing rapid initial contraction followed by a slower persistent
-component \parencite{white2015,hogan2023}. We therefore suggest this family as the initial
-reference model: its parameters have a useful biological interpretation, its long-term driver is
-explicit, and a published COVID-19 calibration is available. This is a practical starting point
-for comparison, rather than a claim that biphasic decay will be preferred for every dataset. We
-use the smooth parameterisation of \textcite{hogan2023} from the outset:
-\begin{align}
-  c(t)&=c_0\{w_1e^{-k_1t}+w_2e^{-k_2t}\},
-  & k_r&=\frac{\log 2}{h_r},\quad r\in\{1,2\},\quad h_1<h_2, \\
-  D&=e^{-k_1t_s}+e^{-k_2t_s},
-  & w_1&=\frac{e^{-k_2t_s}}{D},\qquad
-    w_2=\frac{e^{-k_1t_s}}{D}.
+\subsubsection*{Biphasic exponential (suggested default)}
+Biphasic models describe an initial rapid fall followed by a slower,
+more persistent decline, and have been used successfully to model
+antibody responses after vaccination \parencite{white2015,hogan2023}.
+We suggest this family as the initial reference because its parameters
+have useful biological interpretations, the part that governs
+long-term behaviour is explicit, and published COVID-19 estimates are
+available for calibration. It is a practical basis for comparison,
+not a claim that biphasic decay will suit every dataset. Following
+\textcite{hogan2023}, we write the model as
+\begin{equation}
+  c(t)=c_0
+  \frac{
+    \exp\!\left[-(\log 2)\left(\frac{t}{h_1}+\frac{t_s}{h_2}\right)\right]
+    +\exp\!\left[-(\log 2)\left(\frac{t}{h_2}+\frac{t_s}{h_1}\right)\right]
+  }{
+    \exp[-(\log 2)t_s/h_1]+\exp[-(\log 2)t_s/h_2]
+  },
+  \qquad h_1<h_2.
   \label{eq:biphasic}
-\end{align}
-The fast component can represent contraction of short-lived antibody-secreting cells and the slow
-component a longer-lived population. The weights ensure $c(0)=c_0$ and make the two weighted
-components equal at switching time $t_s$. The slow half-life $h_2$ governs long-term duration but
-may be weakly identified while the fast component dominates.
+\end{equation}
+The fast component can represent the loss of short-lived
+antibody-secreting cells, and the slow component a longer-lived cell
+population. This parameterisation ensures that $c(0)=c_0$ and that the
+two components contribute equally at the switching time $t_s$. The slow
+half-life $h_2$ determines the long-term behaviour, but may be hard to
+estimate until the fast component has subsided.
 
-\subsection*{Power-law decay}
+\subsubsection*{Power-law decay}
 \begin{equation}
   c(t)=c_0(1+\alpha t)^{-\beta}.
 \end{equation}
-This curve decelerates continuously. It can resemble an exponential over a short interval while
-implying a much longer tail. Long-term antibody data provide biological motivation for considering
-decelerating decay rather than a constant half-life \parencite{amanna2007}.
+Here the rate of decline slows continuously. Over a short period the
+curve can look exponential, yet it predicts that antibodies will
+persist much longer. Long-term antibody measurements give biological
+grounds for considering this pattern rather than assuming a constant
+half-life \parencite{amanna2007}.
 
-\subsection*{Plateau or set-point}
+\subsubsection*{Plateau or set-point}
 \begin{equation}
   c(t)=A_\infty +(c_0-A_\infty)e^{-kt}.
 \end{equation}
-Here the long-term level is non-zero. A crossing exists only when
-$A_\infty<c_{\mathrm{thr}}$. Short data may not distinguish a genuine plateau from a very slow
-decline, making ``never crosses'' an informative possibility rather than a numerical failure.
-Long-term measurements showing durable antibody levels motivate this alternative
-\parencite{amanna2007}.
+In this model, the antibody level settles at a non-zero value. It
+crosses the threshold only if $A_\infty<c_{\mathrm{thr}}$. With short
+follow-up, a true plateau may be indistinguishable from a very slow
+decline. Long-term
+measurements showing persistent antibody levels motivate this option
+\parencite{amanna2007}. Because $T^*$ may not have a finite value under
+this model, the workshop should decide whether and how to include it in
+model comparisons.
 
-\subsection*{Mechanistic antibody-production model}
-A richer generating model can represent short- and long-lived antibody-secreting cells and
-antibody clearance separately:
+\subsection*{More complex models for generating test data}
+
+\subsubsection*{Mechanistic antibody-production model}
+A more detailed model can represent short- and long-lived
+antibody-secreting cells, as well as the clearance of the antibodies
+themselves:
 \begin{align}
   \frac{dP_s}{dt}&=-\delta_sP_s, &
   \frac{dP_l}{dt}&=-\delta_lP_l, &
   \frac{dc}{dt}&=\rho_sP_s+\rho_lP_l-\delta_cc.
 \end{align}
-When antibody clears quickly relative to the cells, this approaches biphasic decay; added memory
-or replenishment can generate an even slower tail. Related models have been developed for plasma
-cell dynamics and vaccine responses \parencite{andraud2012,pasin2019}. Such a model may be most
-useful as a deliberately richer data-generating mechanism rather than as the default fitted model.
+When antibodies clear more quickly than the cells, this model behaves
+like biphasic decay. Adding immune memory or cell replenishment can
+produce still slower long-term decline. Related models have been
+developed for plasma-cell dynamics and vaccine responses
+\parencite{andraud2012,pasin2019}. For this project, such a model may
+be most useful for generating realistic test data, rather than as the
+default model fitted to every dataset.
 
-A complementary later-stage generator could use the semi-mechanistic model developed across a
-series of COVID-19 studies \parencite{nishiyama2023,nakamura2024,park2025,hart2025}. It links a
-decaying mRNA stimulus to delayed, nonlinear antibody production and antibody loss, and can
-represent boosting, infection history and between-participant variation. Public code and derived
-parameter estimates make it a practical calibration resource. Once vaccine stimulation has
-vanished, however, its long-term tail tends towards a single exponential, so it is better suited to
-testing dose-response dynamics and heterogeneous trajectories than to replacing the richer
-slow-tail generator above.
+\subsubsection*{COVID-19 semi-mechanistic model}
+A second option for generating test data is the semi-mechanistic model
+developed in a series of COVID-19 studies
+\parencite{nishiyama2023,nakamura2024,park2025,hart2025}. It links a
+waning mRNA stimulus to delayed, non-linear antibody production and
+antibody loss, and can account for boosting, infection history and
+differences between participants. Once the vaccine stimulus has
+disappeared, however, the model approaches a single exponential
+decline.
 
-\section{Observation model and biphasic population parameterisation}\label{sec:parameterisation}
+\section{Measurement error and starting values for the biphasic
+model}\label{sec:parameterisation}
 
-Observed assays are naturally treated as noisy measurements of a latent positive curve. A simple
-starting point is multiplicative log-normal error,
+Assay results are noisy measurements of an underlying positive
+trajectory. A simple starting point is to assume multiplicative
+log-normal error:
 \begin{equation}
   \log y_{ij}=\log c_i(t_{ij})+\epsilon_{ij},
   \qquad \epsilon_{ij}\sim N(0,\sigma_{\log}^2).
   \label{eq:observation}
 \end{equation}
-Lower and upper quantification limits can be represented as censoring rather than replacing
-censored observations by exact boundary values. This observation model can be used with any of
-the candidate trajectories in Section~\ref{sec:models}.
+Results below or above the assay's quantification limits can be treated
+as censored, rather than assigned exactly to the relevant limit. This
+observation model can be combined with any of the trajectories in
+Section~\ref{sec:models}.
 
-For the suggested biphasic reference model, between-participant variation can be introduced
-through correlated log-normal random effects on peak level and the slow decay rate, for example
-\begin{align}
-  c_{0i}&=c_0e^{\eta_{0i}}, & k_{2i}&=k_2e^{\eta_{ki}}, \\
-  \begin{pmatrix}\eta_{0i}\\ \eta_{ki}\end{pmatrix}
-  &\sim N_2\!\left[
-    \begin{pmatrix}0\\0\end{pmatrix},
-    \begin{pmatrix}
-      \omega_0^2 & \rho_{0k}\omega_0\omega_k \\
-      \rho_{0k}\omega_0\omega_k & \omega_k^2
-    \end{pmatrix}\right].
-  \label{eq:heterogeneity}
-\end{align}
-This permits both individual and population targets and asks whether additional participants
-compensate for sparse information within each trajectory. Population mechanistic models have used
-this type of structure in vaccine applications \parencite{pasin2019}.
-
-Table~\ref{tab:starting-values} makes the first case study concrete by using Hogan's estimate for
-BNT162b2 after dose 3 against Delta, alongside their shared biphasic decay parameters. All antibody
-levels use the convalescent-relative scale defined above. These values are calibration aids, not
-universal biological constants; the source/basis column distinguishes published estimates from
-workshop modelling choices.
+Table~\ref{tab:starting-values} gives possible starting parameters for
+a biphasic exponential model of BNT162b2 after dose 3 against the
+Delta variant, based on the parameterisation of \textcite{hogan2023}.
+All antibody levels are expressed relative to the mean convalescent
+neutralisation level defined above.
 
 \begin{table}[H]
-\centering
-\footnotesize
-\caption{Tentative starting values for a BNT162b2 dose-3 biphasic COVID-19 baseline.}
-\label{tab:starting-values}
-\begin{tabularx}{\textwidth}{@{}
-  >{\raggedright\arraybackslash}p{0.22\textwidth}
-  >{\raggedright\arraybackslash}p{0.16\textwidth}
-  >{\raggedright\arraybackslash}p{0.23\textwidth}
-  >{\raggedright\arraybackslash}X@{}}
-\toprule
-Quantity & Starting value & Source / basis & Interpretation / possible variation \\
-\midrule
-Early level $c_0$ & $0.92c_{\mathrm{conv}}$ & \textcite{hogan2023} & BNT162b2 dose 3 against Delta; 95\% CrI 0.71--1.19 \\
-Log-error SD $\sigma_{\log}$ & 0.20 & Workshop noise choice & Explore lower and higher assay variability \\
-Fast half-life $h_1$ & 35 days & \textcite{hogan2023} & Early contraction; tentative range 25--60 days \\
-Slow half-life $h_2$ & 581 days & \textcite{hogan2023} & Highest-priority tail sensitivity; consider 250--900 days \\
-Switching time $t_s$ & 75 days & \textcite{hogan2023} & Equal weighted components at this time \\
-Weights $w_1:w_2$ & about 80:20 & Derived from \textcite{hogan2023} & From $h_1$, $h_2$ and $t_s$ in Equation~\ref{eq:biphasic} \\
-Protection anchor $c_{\mathrm{thr}}$ & 0.202 / 0.030 & \textcite{khoury2021} & Multiples of $c_{\mathrm{conv}}$ for 50\% symptomatic / severe protection \\
-Peak / rate log-SD $\omega_0/\omega_k$ & 0.30 / 0.25 & Workshop heterogeneity choice & Moderate between-participant variation \\
-Peak--rate correlation $\rho_{0k}$ & $-0.30$ & Workshop correlation choice & Include zero as a comparison \\
-\bottomrule
-\end{tabularx}
+  \centering
+  \footnotesize
+  \caption{Tentative starting values for a BNT162b2 dose-3 biphasic
+  COVID-19 neutralising-antibody baseline.}
+  \label{tab:starting-values}
+  \begin{tabularx}{\textwidth}{@{}
+      >{\raggedright\arraybackslash}p{0.22\textwidth}
+      >{\raggedright\arraybackslash}p{0.16\textwidth}
+      >{\raggedright\arraybackslash}p{0.23\textwidth}
+    >{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Quantity & Starting value & Source / basis & Interpretation /
+    possible variation \\
+    \midrule
+    Early level $c_0$ & 0.92 &
+    \textcite{hogan2023} & BNT162b2 dose 3 against Delta; 95\% CrI 0.71--1.19 \\
+    Log-error SD $\sigma_{\log}$ & 0.20 & Workshop noise choice &
+    Explore lower and higher assay variability \\
+    Fast half-life $h_1$ & 35 days & \textcite{hogan2023} & Early
+    contraction; tentative range 25--60 days \\
+    Slow half-life $h_2$ & 581 days & \textcite{hogan2023} &
+    Most important long-term assumption; consider 250--900 days \\
+    Switching time $t_s$ & 75 days & \textcite{hogan2023} & Equal
+    contributions from the two components at this time \\
+    Protection anchor $c_{\mathrm{thr}}$ & 0.202 / 0.030 &
+    \textcite{khoury2021} & Relative titres associated with 50\%
+    symptomatic / severe protection \\
+    \bottomrule
+  \end{tabularx}
 \end{table}
 
-The uncited workshop choices in the table are deliberately round simulation defaults, not
-literature estimates. The workshop may choose a different vaccine, dose, assay normalisation or
-tail calibration before any headline analysis.
+\section{Differences between participants}\label{sec:heterogeneity}
 
-\section{A possible analysis programme}\label{sec:analysis}
+In the biphasic reference model, participants can differ in their peak
+antibody level and slow half-life. One way to represent these
+differences is with correlated log-normal random effects directly on
+those two quantities:
+\begin{align}
+  c_{0i} &= c_0e^{\eta_{0i}},
+  & h_{2i} &= h_2e^{\eta_{hi}}, \\
+  \boldsymbol{\eta}_i
+  &=
+  \begin{pmatrix}\eta_{0i}\\ \eta_{hi}
+  \end{pmatrix}
+  \sim N_2(\boldsymbol{0},\boldsymbol{\Sigma}), \qquad
+  & \boldsymbol{\Sigma}
+  &=
+  \begin{pmatrix}
+    \omega_0^2 & \rho_{0h}\omega_0\omega_h \\
+    \rho_{0h}\omega_0\omega_h & \omega_h^2
+  \end{pmatrix}.
+  \label{eq:heterogeneity}
+\end{align}
+This structure lets us estimate outcomes for both individuals and the
+population. It also lets us ask whether recruiting more participants
+can make up for taking only a few measurements from each person.
+Similar structures have been used in population models of vaccine
+responses \parencite{pasin2019}.
 
-A simulation-first programme would create a full longitudinal dataset from a known trajectory,
-then reveal the portions available at successive planned trial reviews. Each candidate model could
-be fitted to the data available at each review and extrapolated to $T^*$. Because the generating
-truth is known, the exercise can separate uncertainty from confident misspecification and ask when
-a decision to conclude durability follow-up would have been well supported.
+Table~\ref{tab:heterogeneity} gives tentative starting values for this
+between-participant variation, using the same BNT162b2 dose-3 setting
+as Table~\ref{tab:starting-values}.
 
-A natural progression is:
-\begin{enumerate}
-  \item establish a transparent homogeneous baseline in which a biphasic model is fitted to
-        biphasic data;
-  \item reveal successively longer follow-up windows and examine when conclusions about duration
-        become stable, or only appear stable;
-  \item fit all candidate families to the same truncated data to expose disagreement in the tail;
-  \item generate data from richer mechanistic models and ask whether simple fitted models remain
-        useful;
-  \item introduce participant heterogeneity and compare individual with population duration;
-  \item if useful, map antibody trajectories to symptomatic and severe-disease protection or
-        compare the framework with an open real dataset.
-\end{enumerate}
+\begin{table}[H]
+  \centering
+  \footnotesize
+  \caption{Tentative starting values for between-participant
+  heterogeneity in the biphasic baseline.}
+  \label{tab:heterogeneity}
+  \begin{tabularx}{\textwidth}{@{}
+      >{\raggedright\arraybackslash}p{0.22\textwidth}
+      >{\raggedright\arraybackslash}p{0.16\textwidth}
+      >{\raggedright\arraybackslash}p{0.23\textwidth}
+    >{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Quantity & Starting value & Source / basis & Interpretation /
+    possible variation \\
+    \midrule
+    Peak / half-life log-SD $\omega_0/\omega_h$ & 0.30 / 0.25 & Workshop
+    starting value & Moderate differences between participants \\
+    Peak--half-life correlation $\rho_{0h}$ & $0.30$ & Workshop
+    correlation choice & Equivalent to a $-0.30$ peak--rate
+    correlation; include zero as a comparison \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
-Points for discussion include which duration is clinically meaningful; how strongly to privilege
-COVID-19; which model families and parameterisations are worth pursuing; how inference and study
-design should be handled; what evidence should be sufficient to conclude durability follow-up;
-which comparisons would be most informative; and what degree of extrapolation would be acceptable
-to a trial designer.
+The uncited values in Tables~\ref{tab:starting-values} and
+\ref{tab:heterogeneity} are convenient starting points for simulation,
+not estimates from the literature. The workshop may instead choose a
+different vaccine, dose, assay scale or long-term rate of decline.
 
-\section{How the literature informs the project}\label{sec:literature-guide}
+\section{Evidence base and key studies}\label{sec:literature-guide}
 
-\textbf{Plotkin and Gilbert (2012).} This short framework gives us the vocabulary needed to
-distinguish a statistical correlate, a mechanistic correlate and a surrogate endpoint, helping us
-avoid interpreting a protection-relevant antibody marker as the whole immune mechanism
+The papers below are grouped by the part of the project they inform:
+interpreting antibody markers, calibrating the COVID-19 example,
+representing differences between participants, and understanding
+long-term antibody dynamics and follow-up.
+
+\subsection*{From antibody markers to protection}
+
+\textbf{Plotkin and Gilbert (2012).} This framework distinguishes a
+statistical correlate, a mechanistic correlate and a surrogate
+endpoint. It helps us avoid treating a protection-relevant antibody
+marker as the whole immune mechanism
 \parencite{plotkin2012}.
 
-\textbf{Khoury et al. (2021).} This is the main quantitative bridge from neutralisation titre to
-protection: it supplies the logistic relationship and relative 50\%-protection anchors that can be
-used to turn a fitted antibody curve into an endpoint-specific protection curve
+\textbf{Earle et al. (2021).} This comparison across vaccines gives
+broader evidence that antibody levels can act as a correlate of
+protection for COVID-19 vaccines. It supports our use of an antibody
+marker without implying that antibodies alone cause protection
+\parencite{earle2021}.
+
+\textbf{Gilbert et al. (2022).} This analysis of the mRNA-1273
+efficacy trial shows that neutralisation is a graded correlate of
+risk. It therefore supports modelling the marker continuously rather
+than using only a binary laboratory cut-off \parencite{gilbert2022}.
+
+\textbf{Feng et al. (2021).} This analysis of ChAdOx1 nCoV-19 also
+finds a continuous relationship between immune markers and symptomatic
+or asymptomatic infection. It cautions against treating one threshold
+as universal \parencite{feng2021}.
+
+\textbf{Khoury et al. (2021).} This study provides the main
+quantitative link between neutralisation titre and protection. Its
+logistic relationship and estimates of the titres associated with
+50\% protection can be used to convert a fitted antibody trajectory
+into a protection curve for a specific clinical endpoint
 \parencite{khoury2021}.
 
-\textbf{Cromer et al. (2022).} The meta-analysis extends the titre-to-protection framework across
-variants and boosting, reminding us that starting titre and antigenic change can alter protection
-duration even when the underlying decay process is unchanged \parencite{cromer2022}.
+\textbf{Cromer et al. (2022).} This meta-analysis extends the link
+between neutralisation titre and protection across variants and
+boosting. It shows that the initial titre and antigenic change can
+alter the duration of protection even when antibodies wane at the same
+rate
+\parencite{cromer2022}.
 
-\textbf{Gilbert et al. (2022).} The mRNA-1273 efficacy-trial analysis provides trial-level evidence
-that neutralisation is a graded correlate of risk, supporting continuous marker models rather than
-only a binary laboratory cut-off \parencite{gilbert2022}.
+\subsection*{COVID-19 antibody kinetics and calibration}
 
-\textbf{Feng et al. (2021).} This analysis of ChAdOx1 nCoV-19 similarly supports a continuous
-relationship between immune markers and symptomatic or asymptomatic infection, and cautions
-against treating any single threshold as universal \parencite{feng2021}.
+\textbf{Hogan et al. (2023).} This modelling study estimates initial
+neutralising-antibody levels for specific vaccines and doses, together
+with fast and slow half-lives and a switching time. These estimates
+provide the tentative COVID-19 calibration and show how antibody
+dynamics can be linked to longer-term effectiveness against variants
+\parencite{hogan2023}.
 
-\textbf{Earle et al. (2021).} The cross-vaccine synthesis supplies broader evidence that antibody
-levels can function as a protective correlate for COVID-19 vaccines, strengthening the case for
-the marker-based starting point while not establishing causality by itself \parencite{earle2021}.
+\textbf{Nishiyama et al. (2023).} This study extends an antibody
+model based on mRNA stimulation to include a booster dose and previous
+infection. It shows how repeated exposures can alter the duration of
+the response and provides a compact semi-mechanistic model for later
+simulations \parencite{nishiyama2023}.
 
-\textbf{Hogan et al. (2023).} This model-based study provides vaccine- and dose-specific initial
-immunity levels and the tentative COVID-19 biphasic calibration---including fast and slow
-half-lives and a switching time---and illustrates how immune kinetics can be connected to
-longer-term effectiveness against variants \parencite{hogan2023}.
+\subsection*{Variation between participants}
 
-\textbf{Nishiyama et al. (2023).} This study extends an mRNA-stimulus antibody model to a booster
-dose and infection history, showing how repeated immune exposures can alter response duration and
-providing a compact semi-mechanistic alternative for later simulations \parencite{nishiyama2023}.
-
-\textbf{Nakamura et al. (2024).} Dense measurements from a small calibration cohort and sparse
-measurements from more than 2,400 participants are combined to reconstruct heterogeneous
-individual trajectories after primary vaccination. The fitted parameter distributions are a useful
-COVID-19 calibration source, although the underlying clinical dataset is access-restricted
+\textbf{Nakamura et al. (2024).} This study combines frequent
+measurements from a small group with sparse measurements from more than
+2,400 participants to reconstruct individual trajectories after
+primary vaccination. Its fitted parameter distributions are useful
+for calibrating variation between participants, although the clinical
+data are access-restricted
 \parencite{nakamura2024}.
 
-\textbf{Park et al. (2025).} Longitudinal trajectories after primary and booster vaccination are
-stratified into durable, vulnerable and rapid-declining response patterns, with rapid decline linked
-to earlier subsequent infection. This makes heterogeneity clinically relevant rather than merely a
-statistical complication \parencite{park2025}.
+\textbf{Park et al. (2025).} This study groups antibody trajectories
+after primary and booster vaccination into durable, vulnerable and
+rapidly declining patterns. The link between rapid decline and earlier
+subsequent infection shows that differences between participants have
+clinical importance \parencite{park2025}.
 
-\textbf{Hart et al. (2025).} The same individual-level antibody model is linked to susceptibility
-and population outbreak risk. Its open code and derived parameter estimates provide an immediately
-usable resource for simulation and calibration \parencite{hart2025}.
+\textbf{Hart et al. (2025).} This study links the same individual
+antibody model to susceptibility and population outbreak risk. Its
+open code and derived parameter estimates can be used directly for
+simulation and calibration \parencite{hart2025}.
 
-\textbf{White et al. (2015).} The RTS,S malaria analysis is the closest published analogue to the
-project's intended chain: it uses biphasic antibody kinetics and links the resulting waning marker
-to duration of vaccine efficacy \parencite{white2015}.
+\textbf{Pasin et al. (2019).} This Ebola prime--boost study shows how
+biological antibody dynamics and differences between participants can
+be estimated together. It is therefore a useful guide for the stage
+of the project that introduces participant variation
+\parencite{pasin2019}.
 
-\textbf{Strezova et al. (2025).} The final Shingrix long-term follow-up analysis demonstrates the
-practical scale of the design problem: an extension of pivotal phase 3 trials followed more than
-7,000 participants and assessed protection through 11 years. It provides a concrete setting in
-which the value of additional durability data must be weighed against prolonged follow-up
+\subsection*{Long-term dynamics and follow-up}
+
+\textbf{Amanna et al. (2007).} Long-term measurements across antigens
+show that antibody persistence varies greatly and need not follow one
+constant half-life. This finding motivates the power-law and plateau
+models, and the project's focus on long-term behaviour
+\parencite{amanna2007}.
+
+\textbf{Andraud et al. (2012).} These linked plasma-cell and antibody
+models provide a clear biological basis for generating trajectories
+over several time scales. They can be used to test when a simpler
+decay curve is a good enough approximation \parencite{andraud2012}.
+
+\textbf{White et al. (2015).} This analysis of the RTS,S malaria
+vaccine is the closest published example of the proposed approach: it
+uses a biphasic model of antibody decline and links that decline to the
+duration of vaccine efficacy \parencite{white2015}.
+
+\textbf{Strezova et al. (2025).} The final Shingrix analysis shows the
+practical scale of this design problem. The extension of the pivotal
+phase 3 trials followed more than 7,000 participants and assessed
+protection for up to 11 years. It provides a concrete example in which
+the value of more durability data must be weighed against the burden
+of prolonged follow-up
 \parencite{strezova2025}.
-
-\textbf{Andraud et al. (2012).} The nested plasma-cell and antibody models provide a clear
-mechanistic template for generating trajectories on several biological time scales and for asking
-when a simpler decay curve is an adequate approximation \parencite{andraud2012}.
-
-\textbf{Pasin et al. (2019).} The Ebola prime-boost study demonstrates how mechanistic antibody
-dynamics and between-participant variation can be estimated together, making it a useful model for
-the hierarchical phase of this project \parencite{pasin2019}.
-
-\textbf{Amanna et al. (2007).} Long-term measurements across antigens show that antibody durability
-varies greatly and need not follow a single constant half-life, motivating the power-law and
-plateau alternatives and explicit attention to the tail \parencite{amanna2007}.
 
 \printbibliography[title={Selected literature}]
 
