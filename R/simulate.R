@@ -11,6 +11,10 @@
 # the follow-up length is what makes the follow-up comparison clean -- the same
 # underlying history is truncated at 3, 6, 12 months, so differences between
 # reviews are information, not noise.
+#
+# The biphasic generator lives here; the mechanistic generators live in
+# R/calibrate.R and belong to workstream (e). Both return a `sim_dataset()`
+# over the full horizon, so `reduce_to_review()` treats them alike.
 # ---------------------------------------------------------------------------
 
 #' Simulate complete antibody histories for one design cell.
@@ -69,13 +73,4 @@ observe <- function(c_true, sigma_log, lloq = NA_real_, uloq = NA_real_) {
 #' @return a data frame of `participant_id`, `eta_0`, `eta_h`.
 draw_random_effects <- function(n, cfg) {
   .not_implemented("draw_random_effects", "(a) coordinator")
-}
-
-#' Simulate from the mechanistic antibody-production model.
-#'
-#' The three-compartment ODE of handout Section 4 (short- and long-lived
-#' antibody-secreting cells plus antibody clearance), used to generate test
-#' data whose shape the fitted families do not exactly contain.
-simulate_mechanistic <- function(cell, cfg, horizon_days = 1200, ...) {
-  .not_implemented("simulate_mechanistic", "(a) coordinator")
 }
