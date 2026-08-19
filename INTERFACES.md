@@ -19,7 +19,7 @@ Each workstream owns its own files, so parallel work does not collide.
 | **(b)** simple analysis | `R/fit-ls.R` | Biphasic least squares, bootstrap intervals |
 | **(c)** alternate models + MCMC | `R/fit-mcmc.R` | All candidate families, model selection, Bayesian fits |
 | **(d)** NLME | `R/fit-nlme.R` | Mixed-effects fits, individual against population |
-| **(e)** calibration | `R/calibrate.R` | Threshold, assay limits, protection link, sensitivities |
+| **(e)** parameterisation + mechanistic models | `R/calibrate.R` | Parameter values and their sources, thresholds and assay limits, mechanistic generators, sensitivities |
 
 Rules:
 

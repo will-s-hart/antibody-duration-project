@@ -66,7 +66,7 @@ work that has not landed yet.
 | (b) | Simple analysis: biphasic model by least squares | `R/fit-ls.R` |
 | (c) | Alternate models, model selection and MCMC | `R/fit-mcmc.R` |
 | (d) | Nonlinear mixed-effects models | `R/fit-nlme.R` |
-| (e) | Calibration, thresholds and protection mapping | `R/calibrate.R` |
+| (e) | Parameterisation, thresholds and mechanistic models | `R/calibrate.R` |
 
 The contract between them — the four schemas, the units convention and the
 rule that a trajectory which never crosses the threshold is `Inf` — is in

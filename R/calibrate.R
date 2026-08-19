@@ -1,20 +1,28 @@
 # ---------------------------------------------------------------------------
-# Calibration: threshold, assay limits, and the link to protection.
+# Parameterisation, thresholds, and mechanistic generating models.
 #
 # OWNER: workstream (e). Contract in INTERFACES.md.
 #
-# Every duration in this project is a statement about a threshold. Change the
-# threshold and every number changes with it, which makes calibration a
-# first-class part of the analysis rather than a preliminary. The same goes
-# for the assay quantification limits: censoring in the tail removes exactly
-# the measurements that identify the slow half-life.
+# Every duration in this project is a statement about a threshold, reached by
+# a trajectory carrying particular parameter values. Change either and every
+# number changes with it, which makes the parameterisation a first-class part
+# of the analysis rather than a preliminary. The same goes for the assay
+# quantification limits: censoring in the tail removes exactly the
+# measurements that identify the slow half-life.
 #
-# This workstream owns three things: confirming that the configuration's
-# calibration is defensible and internally consistent; producing the
-# sensitivity runs that show how much the conclusions depend on it; and
-# building the optional link from an antibody trajectory to a protection
+# This workstream owns three things. The parameter values and thresholds:
+# confirming that what the configuration transcribes from the handout is
+# defensible and internally consistent, and producing the sensitivity runs
+# that show how much the conclusions depend on it. The mechanistic generating
+# models, which produce data whose shape the fitted families do not exactly
+# contain, so that model misspecification can be studied rather than assumed
+# away. And the optional link from an antibody trajectory to a protection
 # curve, which makes explicit that antibody persistence and protection are
 # related but not the same thing (handout Section 2).
+#
+# The mechanistic models are generators, not candidate fitted families: the
+# families in R/models.R stay frozen and shared, and workstream (c) owns which
+# of them are fitted.
 # ---------------------------------------------------------------------------
 
 #' Check that a configuration's calibration hangs together.
@@ -28,7 +36,7 @@
 #' @return a data frame of checks with pass/fail and a short reason, so the
 #'   result can go straight into the results memo.
 check_calibration <- function(cfg) {
-  .not_implemented("check_calibration", "(e) calibration")
+  .not_implemented("check_calibration", "(e) parameterisation")
 }
 
 #' Configurations spanning the calibration uncertainty.
@@ -41,7 +49,7 @@ check_calibration <- function(cfg) {
 calibration_scenarios <- function(cfg,
                                   h2_days = c(250, 581, 900),
                                   thresholds = c("symptomatic", "severe")) {
-  .not_implemented("calibration_scenarios", "(e) calibration")
+  .not_implemented("calibration_scenarios", "(e) parameterisation")
 }
 
 #' Protection against a clinical endpoint, given a marker level.
@@ -52,7 +60,7 @@ calibration_scenarios <- function(cfg,
 #'
 #' @param endpoint "symptomatic" or "severe".
 protection_from_titre <- function(c, cfg, endpoint = "symptomatic") {
-  .not_implemented("protection_from_titre", "(e) calibration")
+  .not_implemented("protection_from_titre", "(e) parameterisation")
 }
 
 #' Time at which protection falls below a chosen level.
@@ -61,7 +69,7 @@ protection_from_titre <- function(c, cfg, endpoint = "symptomatic") {
 #' never falls that far, on the same convention as everything else.
 time_to_protection_level <- function(fit, cfg, level = 0.5,
                                      endpoint = "symptomatic") {
-  .not_implemented("time_to_protection_level", "(e) calibration")
+  .not_implemented("time_to_protection_level", "(e) parameterisation")
 }
 
 #' Sensitivity of the assay quantification limits.
@@ -70,5 +78,19 @@ time_to_protection_level <- function(fit, cfg, level = 0.5,
 #' half-life, so an LLOQ can matter as much as a shorter follow-up. Quantify
 #' the trade.
 lloq_sensitivity <- function(agg, cfg) {
-  .not_implemented("lloq_sensitivity", "(e) calibration")
+  .not_implemented("lloq_sensitivity", "(e) parameterisation")
+}
+
+#' Simulate from the mechanistic antibody-production model.
+#'
+#' The three-compartment ODE of handout Section 4 (short- and long-lived
+#' antibody-secreting cells plus antibody clearance), used to generate test
+#' data whose shape the fitted families do not exactly contain.
+#'
+#' Returns what [simulate_full()] returns, so it can stand in wherever a
+#' complete history is expected: a [sim_dataset()] over `horizon_days`,
+#' passing [validate_sim_dataset()], with `$cell$truth_model` recording which
+#' generator produced it.
+simulate_mechanistic <- function(cell, cfg, horizon_days = 1200, ...) {
+  .not_implemented("simulate_mechanistic", "(e) parameterisation")
 }
