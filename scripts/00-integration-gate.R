@@ -69,8 +69,8 @@ ok("score_rows   %d rows, %d columns", nrow(scores), ncol(scores))
 # Uncomment each as it lands. The gate is green only for what actually runs.
 #
 # step("Pipeline")
-# full  <- simulate_full(gate_cell, cfg)                      # (a)
-# data  <- reduce_to_review(full, gate_cell)                  # (a)
+# full  <- simulate_full(gate_cell, cfg)                      # (b)
+# data  <- reduce_to_review(full, gate_cell)                  # (b)
 # fit   <- fit_ls_bootstrap(data, "biphasic", cfg)            # (b)
 # score <- score_fit(fit, data, cfg)                          # (a)
 # p     <- plot_example_fit(data, list(fit), cfg)             # (a)

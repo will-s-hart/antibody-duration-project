@@ -15,7 +15,7 @@ follow-up. The study simulates complete antibody histories, hides everything
 after a review date, fits candidate trajectory models, and asks how reliably
 the duration is recovered.
 
-Five workstreams run in parallel over three days. See the ownership table in
+Four workstreams run in parallel over three days. See the ownership table in
 [INTERFACES.md](INTERFACES.md).
 
 ## The handout is the source of truth
@@ -60,7 +60,7 @@ wanted it commits code that calls it. Never hand-edit `renv.lock`.
 
 The MCMC and NLME engines are the case this is designed for. `brms`,
 `cmdstanr`, `nlmixr2`, `rjags` and `saemix` are declared in `Suggests` and
-deliberately unpinned; workstreams (c) and (d) choose, install and snapshot
+deliberately unpinned; workstreams (b) and (d) choose, install and snapshot
 whichever they use. `cmdstanr` is not on CRAN, which is what
 `Additional_repositories` in `DESCRIPTION` is for.
 

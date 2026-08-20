@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # Simple analysis: biphasic model by least squares.
 #
-# OWNER: workstream (b). Contract in INTERFACES.md.
+# OWNER: workstream (b), simulation and inference. Contract in INTERFACES.md.
 #
 # The reference point everything else is judged against. Fit the biphasic
 # family of handout Equation (2) to the log measurements by least squares, and
@@ -23,7 +23,7 @@
 #'
 #' Least squares on `log y` is the maximum-likelihood fit under the handout's
 #' log-normal observation model, which keeps this comparable with the
-#' likelihood-based methods in workstreams (c) and (d).
+#' likelihood-based methods in workstreams (b) and (d).
 #'
 #' Censored observations carry `NA` in `y_obs`; decide and document how they
 #' are handled, because dropping them is itself an assumption.
@@ -38,7 +38,7 @@
 #'   Check it: a result that looks reasonable but came from an optimiser that
 #'   had not converged is the failure mode that is hardest to spot later.
 fit_ls <- function(data, model = "biphasic", cfg, start = NULL) {
-  .not_implemented("fit_ls", "(b) simple analysis")
+  .not_implemented("fit_ls", "(b) simulation and inference")
 }
 
 #' Bootstrap the least-squares fit and return duration draws.
@@ -53,7 +53,7 @@ fit_ls <- function(data, model = "biphasic", cfg, start = NULL) {
 #'   `crossed = FALSE`.
 fit_ls_bootstrap <- function(data, model = "biphasic", cfg, n_boot = 500L,
                              start = NULL) {
-  .not_implemented("fit_ls_bootstrap", "(b) simple analysis")
+  .not_implemented("fit_ls_bootstrap", "(b) simulation and inference")
 }
 
 #' Delta-method interval for the duration, for comparison with the bootstrap.
@@ -61,5 +61,5 @@ fit_ls_bootstrap <- function(data, model = "biphasic", cfg, n_boot = 500L,
 #' Kept separate on purpose. If the two disagree materially, that disagreement
 #' is a finding about the design, not a nuisance to be resolved by picking one.
 tstar_delta_interval <- function(fit, cfg, level = 0.90) {
-  .not_implemented("tstar_delta_interval", "(b) simple analysis")
+  .not_implemented("tstar_delta_interval", "(b) simulation and inference")
 }

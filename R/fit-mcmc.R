@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # Alternate models, model selection, and Bayesian inference.
 #
-# OWNER: workstream (c). Contract in INTERFACES.md.
+# OWNER: workstream (b), simulation and inference. Contract in INTERFACES.md.
 #
 # Two jobs. First, fit the full set of candidate families from handout
 # Section 4 -- exponential, biphasic, power law, plateau -- without assuming
@@ -35,14 +35,14 @@
 #'   from an explicit rule agreed with the group -- filtering after the fact
 #'   on an undeclared rule changes what the aggregate means.
 fit_mcmc <- function(data, model = "biphasic", cfg, engine = "stan", ...) {
-  .not_implemented("fit_mcmc", "(c) alternate models and MCMC")
+  .not_implemented("fit_mcmc", "(b) simulation, inference and MCMC")
 }
 
 #' Fit every candidate family to the same dataset.
 #'
 #' @return a named list of [fit_result()], one per family.
 fit_all_models <- function(data, cfg, models = CANDIDATE_MODELS, ...) {
-  .not_implemented("fit_all_models", "(c) alternate models and MCMC")
+  .not_implemented("fit_all_models", "(b) simulation, inference and MCMC")
 }
 
 #' Compare candidate families on one dataset.
@@ -51,7 +51,7 @@ fit_all_models <- function(data, cfg, models = CANDIDATE_MODELS, ...) {
 #' selection uses AIC, BIC, WAIC or LOO is this workstream's call; record it in
 #' the returned table so a figure can state it.
 compare_models <- function(fits, cfg) {
-  .not_implemented("compare_models", "(c) alternate models and MCMC")
+  .not_implemented("compare_models", "(b) simulation, inference and MCMC")
 }
 
 #' Pool duration draws across families by their weights.
@@ -63,5 +63,6 @@ compare_models <- function(fits, cfg) {
 #'
 #' @return a [fit_result()] whose `$tstar_draws` are the pooled draws.
 model_average_tstar <- function(fits, cfg, weights = "aic") {
-  .not_implemented("model_average_tstar", "(c) alternate models and MCMC")
+  .not_implemented("model_average_tstar",
+                   "(b) simulation, inference and MCMC")
 }

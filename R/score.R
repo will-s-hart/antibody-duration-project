@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # Scoring: metrics, adequacy rules, aggregation.
 #
-# OWNER: workstream (a), coordinator, with workstream (e) on the interpretation
+# OWNER: workstream (a), coordinator, with workstream (c) on the interpretation
 # of the threshold. Contract in INTERFACES.md.
 #
 # Scoring reads `fit_result$tstar_draws` and knows nothing about how the draws

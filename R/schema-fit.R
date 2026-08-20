@@ -8,7 +8,7 @@
 # `$tstar_draws` is the common currency of the project. Least squares supplies
 # bootstrap or delta-method draws; MCMC supplies posterior draws; NLME supplies
 # draws for the population and for individuals. Scoring and plotting never
-# branch on `$method`, so workstreams (b), (c) and (d) can be built in
+# branch on `$method`, so inference workstreams (b) and (d) can be built in
 # parallel and compared on one axis.
 #
 # Two rules everything depends on:

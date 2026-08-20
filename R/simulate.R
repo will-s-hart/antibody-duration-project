@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------------------
 # Simulation: truth models, observation process, and reduction to a review.
 #
-# OWNER: workstream (a), coordinator. Part of the shared core -- everyone
-# downstream consumes what this produces, so changes to the returned shape go
-# through group review. Contract in INTERFACES.md.
+# OWNER: workstream (b), simulation and inference. Everyone downstream consumes
+# what this produces, so changes to the returned shape go through group review.
+# Contract in INTERFACES.md.
 #
 # The central idea (handout Section 3): simulate one complete antibody history
 # per participant, then recreate what a trial review would have seen by hiding
@@ -13,7 +13,7 @@
 # reviews are information, not noise.
 #
 # The biphasic generator lives here; the mechanistic generators live in
-# R/calibrate.R and belong to workstream (e). Both return a `sim_dataset()`
+# R/calibrate.R and belong to workstream (c). Both return a `sim_dataset()`
 # over the full horizon, so `reduce_to_review()` treats them alike.
 # ---------------------------------------------------------------------------
 
@@ -33,7 +33,7 @@
 #'   holds the population target.
 simulate_full <- function(cell, cfg, horizon_days = 1200,
                           dense_visits_per_year = 52) {
-  .not_implemented("simulate_full", "(a) coordinator")
+  .not_implemented("simulate_full", "(b) simulation and inference")
 }
 
 #' Reduce a complete history to the data available at a trial review.
@@ -46,7 +46,7 @@ simulate_full <- function(cell, cfg, horizon_days = 1200,
 #' @return a [sim_dataset()] carrying `cell`, passing [validate_sim_dataset()].
 #'   `$truth` is unchanged: the truth does not depend on what was observed.
 reduce_to_review <- function(full, cell) {
-  .not_implemented("reduce_to_review", "(a) coordinator")
+  .not_implemented("reduce_to_review", "(b) simulation and inference")
 }
 
 #' Simulate and reduce in one step.
@@ -62,7 +62,7 @@ make_dataset <- function(cell, cfg, ...) {
 #' quantification limits. Censored rows carry `NA` in `y_obs`; see
 #' [sim_dataset()] for why the limit is not substituted for the value.
 observe <- function(c_true, sigma_log, lloq = NA_real_, uloq = NA_real_) {
-  .not_implemented("observe", "(a) coordinator")
+  .not_implemented("observe", "(b) simulation and inference")
 }
 
 #' Draw correlated per-participant random effects on `c0` and `h2`.
@@ -72,5 +72,5 @@ observe <- function(c_true, sigma_log, lloq = NA_real_, uloq = NA_real_) {
 #'
 #' @return a data frame of `participant_id`, `eta_0`, `eta_h`.
 draw_random_effects <- function(n, cfg) {
-  .not_implemented("draw_random_effects", "(a) coordinator")
+  .not_implemented("draw_random_effects", "(b) simulation and inference")
 }

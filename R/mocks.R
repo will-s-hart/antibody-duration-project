@@ -85,7 +85,7 @@ mock_sim_dataset <- function(cell = mock_design_cell(), censor_frac = 0) {
                          cell$c_thr)
     )
     # Population target from the mean trajectory. The real definition is a
-    # decision for the workshop (handout Section 2) -- workstream (e) owns it.
+    # decision for the workshop (handout Section 2) -- workstream (c) owns it.
     pop <- tstar("biphasic", truth_par, cell$c_thr)
 
     sim_dataset(cell, obs, truth, population_tstar_days = pop,
