@@ -15,11 +15,10 @@ Each workstream owns its own files, so parallel work does not collide.
 | Workstream | Files | Owns |
 | --- | --- | --- |
 | **shared core** | `R/schema-*.R`, `R/models.R`, `R/config.R`, `R/mocks.R`, `inst/config/default.yaml` | The contract below. Changes go through a short group review. |
-| **(a)** coordinator + visualisation | `R/simulate.R`, `R/driver.R`, `R/score.R`, `R/plots.R`, `scripts/` | Simulation, the sweep, metrics, figures, integration |
-| **(b)** simple analysis | `R/fit-ls.R` | Biphasic least squares, bootstrap intervals |
-| **(c)** alternate models + MCMC | `R/fit-mcmc.R` | All candidate families, model selection, Bayesian fits |
+| **(a)** coordination | `R/driver.R`, `R/score.R`, `R/plots.R`, `scripts/` | The sweep, metrics, figures, integration |
+| **(b)** simulation, inference, MCMC | `R/simulate.R`, `R/fit-ls.R`, `R/fit-mcmc.R` | Simulation, least squares, all candidate families, model selection, Bayesian fits |
+| **(c)** mechanistic models | `R/calibrate.R` | Parameter values and their sources, thresholds and assay limits, mechanistic generators, sensitivities |
 | **(d)** NLME | `R/fit-nlme.R` | Mixed-effects fits, individual against population |
-| **(e)** parameterisation + mechanistic models | `R/calibrate.R` | Parameter values and their sources, thresholds and assay limits, mechanistic generators, sensitivities |
 
 Rules:
 
@@ -92,8 +91,8 @@ Analysis code reads `$obs` and nothing else.
 
 **`$tstar_draws` is why the split works.** Least squares supplies bootstrap
 draws, MCMC supplies posterior draws, NLME supplies draws for both estimands.
-Scoring and plotting never branch on `$method`, so (b), (c) and (d) are built
-in parallel and compared on one axis. Summarise with `summarise_tstar()` — the
+Scoring and plotting never branch on `$method`, so the inference work in (b)
+and (d) is compared on one axis. Summarise with `summarise_tstar()` — the
 single place draws become a point estimate and an interval, so that every
 method is summarised identically.
 

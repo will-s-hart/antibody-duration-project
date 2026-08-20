@@ -1,4 +1,4 @@
-# The mocks are what workstreams (b) to (e) build against before the real
+# The mocks are what workstreams (b) to (d) build against before the real
 # simulator exists. If a mock stops satisfying its validator, everyone
 # downstream is building against a contract that no longer holds -- so these
 # tests matter more than their size suggests.

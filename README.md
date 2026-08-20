@@ -55,18 +55,17 @@ Rscript scripts/00-integration-gate.R
 
 ## Workstreams
 
-Work is split five ways so that it can proceed in parallel. Each workstream
-owns its own file and builds against the shared schemas; nobody waits for
+Work is split four ways so that it can proceed in parallel. Each workstream
+owns its own files and builds against the shared schemas; nobody waits for
 anybody, because `mock_sim_dataset()` and `mock_fit_result()` stand in for
 work that has not landed yet.
 
 | | Workstream | File |
 | --- | --- | --- |
-| (a) | Coordination, simulation and visualisation | `R/simulate.R`, `R/driver.R`, `R/score.R`, `R/plots.R` |
-| (b) | Simple analysis: biphasic model by least squares | `R/fit-ls.R` |
-| (c) | Alternate models, model selection and MCMC | `R/fit-mcmc.R` |
+| (a) | Coordination | `R/driver.R`, `R/score.R`, `R/plots.R`, `scripts/` |
+| (b) | Simulation, inference, MCMC | `R/simulate.R`, `R/fit-ls.R`, `R/fit-mcmc.R` |
+| (c) | Mechanistic models | `R/calibrate.R` |
 | (d) | Nonlinear mixed-effects models | `R/fit-nlme.R` |
-| (e) | Parameterisation, thresholds and mechanistic models | `R/calibrate.R` |
 
 The contract between them — the four schemas, the units convention and the
 rule that a trajectory which never crosses the threshold is `Inf` — is in

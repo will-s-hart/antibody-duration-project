@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # Parameterisation, thresholds, and mechanistic generating models.
 #
-# OWNER: workstream (e). Contract in INTERFACES.md.
+# OWNER: workstream (c), mechanistic models. Contract in INTERFACES.md.
 #
 # Every duration in this project is a statement about a threshold, reached by
 # a trajectory carrying particular parameter values. Change either and every
@@ -21,7 +21,7 @@
 # related but not the same thing (handout Section 2).
 #
 # The mechanistic models are generators, not candidate fitted families: the
-# families in R/models.R stay frozen and shared, and workstream (c) owns which
+# families in R/models.R stay frozen and shared, and workstream (b) owns which
 # of them are fitted.
 # ---------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@
 #' @return a data frame of checks with pass/fail and a short reason, so the
 #'   result can go straight into the results memo.
 check_calibration <- function(cfg) {
-  .not_implemented("check_calibration", "(e) parameterisation")
+  .not_implemented("check_calibration", "(c) mechanistic models")
 }
 
 #' Configurations spanning the calibration uncertainty.
@@ -49,7 +49,7 @@ check_calibration <- function(cfg) {
 calibration_scenarios <- function(cfg,
                                   h2_days = c(250, 581, 900),
                                   thresholds = c("symptomatic", "severe")) {
-  .not_implemented("calibration_scenarios", "(e) parameterisation")
+  .not_implemented("calibration_scenarios", "(c) mechanistic models")
 }
 
 #' Protection against a clinical endpoint, given a marker level.
@@ -60,7 +60,7 @@ calibration_scenarios <- function(cfg,
 #'
 #' @param endpoint "symptomatic" or "severe".
 protection_from_titre <- function(c, cfg, endpoint = "symptomatic") {
-  .not_implemented("protection_from_titre", "(e) parameterisation")
+  .not_implemented("protection_from_titre", "(c) mechanistic models")
 }
 
 #' Time at which protection falls below a chosen level.
@@ -69,7 +69,7 @@ protection_from_titre <- function(c, cfg, endpoint = "symptomatic") {
 #' never falls that far, on the same convention as everything else.
 time_to_protection_level <- function(fit, cfg, level = 0.5,
                                      endpoint = "symptomatic") {
-  .not_implemented("time_to_protection_level", "(e) parameterisation")
+  .not_implemented("time_to_protection_level", "(c) mechanistic models")
 }
 
 #' Sensitivity of the assay quantification limits.
@@ -78,7 +78,7 @@ time_to_protection_level <- function(fit, cfg, level = 0.5,
 #' half-life, so an LLOQ can matter as much as a shorter follow-up. Quantify
 #' the trade.
 lloq_sensitivity <- function(agg, cfg) {
-  .not_implemented("lloq_sensitivity", "(e) parameterisation")
+  .not_implemented("lloq_sensitivity", "(c) mechanistic models")
 }
 
 #' Simulate from the mechanistic antibody-production model.
@@ -92,5 +92,5 @@ lloq_sensitivity <- function(agg, cfg) {
 #' passing [validate_sim_dataset()], with `$cell$truth_model` recording which
 #' generator produced it.
 simulate_mechanistic <- function(cell, cfg, horizon_days = 1200, ...) {
-  .not_implemented("simulate_mechanistic", "(e) parameterisation")
+  .not_implemented("simulate_mechanistic", "(c) mechanistic models")
 }
