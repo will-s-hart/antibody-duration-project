@@ -19,6 +19,8 @@
 *.run.xml
 *.snm
 *.synctex.gz
+*.synctex(busy)
+/notes/technical-report.pdf
 *.toc
 *.vrb
 
