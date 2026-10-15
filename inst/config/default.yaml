@@ -105,6 +105,16 @@ pilot:
   prior_sets: [default, broader]
   models: [exponential, biphasic, powerlaw, plateau]
 
+# Repeated individual fits: handout Section 6, fixed biphasic truth.
+repeated:
+  n_replicates: 100
+  prior_set: default
+  models: [exponential, biphasic, powerlaw, plateau]
+  transform_scale_days: 365.25
+  crps_horizon_days: 3652.5
+  sensitivity_horizons_days: [1826.25, 7305]
+  workers: 4
+
 # Adequacy rules. A design is called provisionally adequate only when all
 # three hold; over-coverage on its own is not a failure, but a very wide or
 # mostly non-crossing interval must not pass merely by containing the truth.

@@ -1,0 +1,143 @@
+% Included by technical-report.tex once the completed study is assembled.
+\reporttable{repeated-macros}
+\section{Repeated single-participant simulation}
+
+\subsection{Design and scores}
+Generate \RepeatN{} independent noisy histories of one participant using
+the biphasic truth and assay noise of Table~\ref{tab:calibration} and
+the pilot's monthly visits.
+Fit all four models at six reviews with the early-only default priors
+(Tables~\ref{tab:common} and~\ref{tab:early}). Histories are shared across
+models and nested reviews. This is a fixed-truth measurement-noise study
+without between-individual heterogeneity.
+
+For posterior median $m_r$ and central 90\% interval $[L_r,U_r]$, estimate
+coverage and bias among the $R_{\mathrm{ok}}$ converged replicates as
+\begin{equation}
+  \widehat C=R_{\mathrm{ok}}^{-1}\sum_r
+    \mathbf1\{L_r\leq T^*\leq U_r\},\qquad
+  \widehat B=R_{\mathrm{ok}}^{-1}\sum_r(m_r-T^*).
+\end{equation}
+Precision is summarised by the median interval width and unbounded-interval
+fraction. Intervals with either endpoint infinite count as unbounded;
+infinite medians remain in the bias calculation. Coverage bars are Wilson
+95\% intervals. For finite replicate-level means, Monte Carlo SE is the
+sample SD divided by $\sqrt{R_{\mathrm{ok}}}$; bars show mean
+$\pm1.96$ SE. At the planned \RepeatN{} replicates, the worst-case
+coverage SE is \RepeatCoverageMaxSe{} (\RepeatCoverageNominalSe{} at
+90\% coverage). These SEs describe variation across histories; within-fit
+MCMC uncertainty is controlled by the convergence checks.
+
+Ordinary day-scale CRPS diverges in the presence of non-crossing mass.
+Use the one-to-one transformation $g(t)=t/(365.25+t)$, with
+$g(\infty)=1$, to score the entire extended duration distribution:
+\begin{equation}
+  \operatorname{CRPS}_g(F,T^*)=
+  \int_0^1\{F_g(z)-\mathbf1[g(T^*)\leq z]\}^2\,dz.
+\end{equation}
+Also report restricted CRPS in days,
+\begin{equation}
+  \operatorname{CRPS}_H(F,T^*)=
+  \int_0^H\{F(t)-\mathbf1[T^*\leq t]\}^2\,dt,
+  \qquad H=3652.5\text{ days}.
+\end{equation}
+This equals CRPS for $\min(T^*,H)$ and scores only the distribution up to
+ten years; five- and twenty-year horizons are sensitivity checks. Lower
+scores are better \parencite{gneiting2007}. All empirical CDF integrals are
+computed exactly between sorted draws. The scoring transformations do not
+alter the saved crossing times or non-crossing probabilities. Bias is also
+reported on the bounded $g$ scale, where it remains finite.
+
+\subsection{Results}
+Of \RepeatPlanned{} fits, \RepeatCompleted{} completed and
+\RepeatConverged{} converged across \RepeatAttempts{} sampling attempts.
+Numerical/engine failures: \RepeatErrors{}; unresolved fits:
+\RepeatUnconverged{}. Model/review denominators are
+\RepeatMinDenominator{}--\RepeatMaxDenominator{}. Failure-inclusive
+coverage bounds assign unsuccessful fits first a miss and then a hit.
+All attempts and outcomes remain in the saved outputs.
+
+For severe duration, exponential coverage is \RepeatExpEarlyCoverage{}
+at three months and \RepeatExpLateCoverage{} at 24 months; biphasic
+coverage is \RepeatBipEarlyCoverage{} and \RepeatBipLateCoverage{},
+respectively (Figure~\ref{fig:repeat-coverage}). Power-law and plateau
+coverage at 24 months is \RepeatPowerLateCoverage{} and
+\RepeatPlateauLateCoverage{}. Mean
+posterior-median bias is \RepeatExpLateBias{} days for the exponential,
+\RepeatBipLateBias{} for biphasic and \RepeatPowerLateBias{} for power
+law. Plateau bias is \RepeatPlateauLateBias{} when any replicate has an
+infinite median; this is not replaced by a finite-only average.
+
+At 24 months, mean severe-duration $\operatorname{CRPS}_g$ is
+\RepeatExpLateCrps{} (exponential), \RepeatBipLateCrps{} (biphasic),
+\RepeatPowerLateCrps{} (power law) and \RepeatPlateauLateCrps{} (plateau).
+Figures~\ref{fig:repeat-precision}--\ref{fig:repeat-crps} distinguish
+precision from accuracy: a narrow interval may concentrate on the wrong
+outcome, including infinity. The restricted day score reverses the
+exponential/power-law ordering; both scores favour biphasic at 24 months.
+Figure~\ref{fig:repeat-horizon} checks the restricted-score horizon.
+Results are specific to this fixed reference
+curve, schedule, noise and prior set.
+
+\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{repeated-coverage.pdf}
+\caption{\textbf{Repeated-simulation coverage.} Coverage of nominal 90\%
+individual-duration intervals across \RepeatN{} histories per model/review.
+Whiskers are Wilson 95\% intervals among converged fits; the dashed line
+is nominal coverage. Thick translucent segments give all-planned
+worst-case coverage bounds for unsuccessful fits. The two endpoint panels
+use the same histories.}
+\label{fig:repeat-coverage}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{repeated-width.pdf}
+\includegraphics[width=\textwidth]{repeated-unbounded.pdf}
+\caption{\textbf{Precision and unbounded intervals.} Top: median width
+of central 90\% intervals, retaining unbounded intervals as infinite
+width. Display is capped at twenty years; ``Inf'' is an infinite median
+width and ``$>$'' a finite median width above the cap. Bottom: fraction of
+intervals with an infinite endpoint, with Wilson 95\% intervals. A small
+finite-only width would conceal these non-crossing outcomes.}
+\label{fig:repeat-precision}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{repeated-bias.pdf}
+\includegraphics[width=\textwidth]{repeated-bias-bounded.pdf}
+\caption{\textbf{Bias of the posterior median.} Top: mean error in days,
+retaining infinite medians. The display clips values and error bars at
+$\pm3652.5$ days; ``Inf'' marks infinite bias and ``$>$'' a finite mean
+above the upper cap. Bottom: mean error after applying $g$ to both the
+posterior median and the true duration. Whiskers show $\pm1.96$ Monte
+Carlo SE where finite; the dashed line is zero bias.}
+\label{fig:repeat-bias}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{repeated-crps.pdf}
+\includegraphics[width=\textwidth]{repeated-crps-restricted.pdf}
+\caption{\textbf{Distributional accuracy.} Top: mean CRPS on the bounded
+$g$ scale, scoring the full distribution including infinity. Bottom:
+mean restricted CRPS through ten years, in days. Lower values are better.
+Whiskers show $\pm1.96$ Monte Carlo SE; lower error limits are truncated
+at zero. Ordinary day-scale CRPS is not used to compare models assigning
+non-crossing mass.}
+\label{fig:repeat-crps}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{repeated-horizon.pdf}
+\caption{\textbf{Sensitivity to the restricted-CRPS horizon.} Mean
+day-scale CRPS restricted to five, ten and twenty years. Each row uses
+the same fitted posterior distributions and true crossing times; only the
+score integration horizon changes. Scores do not assess timing beyond
+the stated horizon.}
+\label{fig:repeat-horizon}
+\end{figure}

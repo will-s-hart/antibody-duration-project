@@ -18,10 +18,10 @@
   \input{../results/technical-report/tables/#1.tex}}
 \reporttable{results-macros}
 \hypersetup{pdftitle={Antibody duration: methodology and initial results},
-  pdfsubject={Single-participant comparison of four prior specifications}}
+  pdfsubject={Prior comparisons and repeated single-participant fits}}
 
 \title{\textbf{Antibody duration: methodology and initial results}\\[0.3em]
-  \large Single-participant comparison of four prior specifications}
+  \large Prior comparisons and repeated single-participant fits}
 \author{}
 \date{15 October 2026}
 
@@ -237,7 +237,7 @@ the flexible models after longer follow-up.
 Early fits can resemble one another while their
 tails differ (Figure~\ref{fig:posterior}). Subsequent-visit log scores
 (Figure~\ref{fig:future}) assess a shorter extrapolation than the severe
-threshold. All results concern one noisy individual history; interval
+threshold. These pilot results concern one noisy individual history; interval
 containment here is not an estimate of empirical coverage.
 
 \clearpage
@@ -306,20 +306,26 @@ prediction, not validation of the severe crossing time.}
 \end{figure}
 
 \clearpage
+\IfFileExists{../results/technical-report/tables/repeated-macros.tex}{%
+  \input{repeated-results.tex}\clearpage}{}
 \section*{Reproduction}
-From the repository root, run both pilot variants and the report assembler:
+From the repository root, run the fitting studies and report assemblers:
 \begin{verbatim}
 Rscript scripts/01-prior-pilot.R
 Rscript scripts/01-prior-pilot.R --two-anchor
 Rscript scripts/03-technical-report.R
+Rscript scripts/04-repeated-study.R
+Rscript scripts/05-repeated-report.R
 cd notes
 latexmk -pdf -outdir=../results/technical-report technical-report.tex
 \end{verbatim}
-The editable source is \texttt{notes/technical-report.tex}. The assembler
-validates the saved simulation, fit and score artefacts and writes vector
+The editable main source is \path{notes/technical-report.tex}.
+The repeated-results section is \path{notes/repeated-results.tex}.
+The assemblers validate the saved simulation, fit and score artefacts and write vector
 figures, input tables, an input-file checksum manifest and session
-information to \texttt{results/technical-report/}. No new fits are made
-when rebuilding the report. Priors and calibration follow the handout;
+information to \texttt{results/technical-report/}. Once fits are saved,
+only scripts 03 and 05 and the compiler are needed to rebuild the report.
+Priors and calibration follow the handout;
 this report introduces no additional model assumptions.
 
 \printbibliography

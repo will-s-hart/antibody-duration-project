@@ -36,7 +36,8 @@
 #'   on an undeclared rule changes what the aggregate means.
 fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
                      prior_set = "default", sampler = cfg$fitting$sampler,
-                     work_dir = tempfile("antibody-jags-"), ...) {
+                     work_dir = tempfile("antibody-jags-"),
+                     compute_loo = TRUE, ...) {
   validate_sim_dataset(data)
   model <- match.arg(model, CANDIDATE_MODELS)
   if (engine != "jags") stop("The implemented engine is 'jags'")
@@ -45,7 +46,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   }
   binary <- Sys.which("jags")
   if (!nzchar(binary)) stop("Install the JAGS command-line sampler")
-  for (pkg in c("coda", "posterior", "loo")) {
+  for (pkg in c("coda", "posterior", if (compute_loo) "loo")) {
     if (!requireNamespace(pkg, quietly = TRUE)) stop("Install ", pkg)
   }
   p <- early_prior(cfg, prior_set)
@@ -166,11 +167,17 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   diagnostics <- .early_diagnostics(chains, durations, sampler)
   log_mu <- early_log_curve(pars, model, obs$time_days)
   loglik <- .early_loglik(log_mu, pars$sigma, obs, data$cell)
-  # Account for serial dependence in the importance-sampling diagnostics.
-  shifted <- sweep(loglik, 2, apply(loglik, 2, max), "-")
-  r_eff <- loo::relative_eff(exp(shifted), chain_id = draws$chain_id)
-  loo_fit <- suppressWarnings(loo::loo(loglik, r_eff = r_eff, cores = 1))
-  pareto_k <- loo::pareto_k_values(loo_fit)
+  loo_fit <- NULL
+  pareto_k <- NA_real_
+  looic <- NA_real_
+  if (compute_loo) {
+    # Account for serial dependence in the importance-sampling diagnostics.
+    shifted <- sweep(loglik, 2, apply(loglik, 2, max), "-")
+    r_eff <- loo::relative_eff(exp(shifted), chain_id = draws$chain_id)
+    loo_fit <- suppressWarnings(loo::loo(loglik, r_eff = r_eff, cores = 1))
+    pareto_k <- loo::pareto_k_values(loo_fit)
+    looic <- loo_fit$estimates["looic", "Estimate"]
+  }
   names_native <- curve_params(model)
   long_params <- data.frame(
     draw_id = rep(seq_len(nrow(pars)), each = length(names_native)),
@@ -201,7 +208,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
         "Failed diagnostic thresholds; inspect diagnostics_table"
     ),
     ic = default_ic(n_par = length(early_free_names(model, prior_set)),
-                    loo = loo_fit$estimates["looic", "Estimate"]),
+                    loo = looic),
     provenance = default_provenance(
       engine = "JAGS CLI", engine_version = readLines(log_file)[1],
       seed = data$cell$seed
@@ -215,7 +222,9 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   fit$log_lik <- loglik
   fit$loo <- loo_fit
   fit$pareto_k_max <- max(pareto_k)
-  fit$loo_reliable <- diagnostics$converged && all(pareto_k <= 0.7)
+  fit$loo_reliable <- if (compute_loo) {
+    diagnostics$converged && all(pareto_k <= 0.7)
+  } else NA
   fit$prior_set <- prior_set
   fit$sampler <- sampler
   fit$chain_seeds <- chain_seeds

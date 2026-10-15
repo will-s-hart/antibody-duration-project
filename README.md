@@ -103,6 +103,34 @@ vector figures, the PDF and input provenance are kept under
 `results/technical-report/`. The report includes calibration/prior tables
 and presents numerical results as figures.
 
+## Repeated single-participant fits
+
+The first operating-characteristic study uses 100 independent noisy
+histories of the fixed biphasic truth, with the early-only default priors.
+All four models are fitted at all six reviews: 2,400 planned fits, with both
+thresholds calculated from each posterior. Each fit still uses one person.
+
+```sh
+Rscript scripts/04-repeated-study.R
+Rscript scripts/05-repeated-report.R
+cd notes
+latexmk -pdf -outdir=../results/technical-report technical-report.tex
+```
+
+The runner uses four worker processes and resumes from validated fit
+caches. Override with `--workers=2`; `--replicates=10` gives a smaller
+development run. Failed and unconverged fits are retained and counted.
+Use `--collect-only` to rebuild aggregate results after fitting. Results
+and per-history summaries are in `results/repeated-default/`; raw JAGS
+output and compact validated fits are in `cache/repeated-default/`.
+
+The report adds coverage with Wilson intervals, posterior-median bias,
+interval precision, non-crossing summaries and CRPS. Primary CRPS uses
+the bounded duration transform; a ten-year restricted day-scale CRPS and
+five-/twenty-year sensitivities preserve useful comparison when a model
+assigns mass to never crossing. Actual posterior durations remain `Inf`.
+The handout specifies these scores and the handling of unsuccessful fits.
+
 ## Layout
 
 | Path | Contents |

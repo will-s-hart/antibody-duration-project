@@ -635,6 +635,65 @@ subsequent observed visits withheld at each review, clearly separating this
 simulation check from information available to the fit. Inspect prior
 predictive trajectories under both prior sets before interpreting results.
 
+\subsection*{Repeated single-participant estimation study}
+
+For the first repeated-simulation comparison, use the early-only default
+column of Table~\ref{tab:priors}. Generate $R=100$ independent noisy
+histories of one participant each, holding the biphasic generating
+parameters, monthly visits, noise and six reviews fixed as above. Each
+history is shared across models and nested reviews. Fit all four families
+with the same sampler and convergence rules, giving 2400 planned fits.
+This assesses repeated-measurement uncertainty at one fixed truth, not
+between-participant variation or prior-predictive calibration. Derive every
+simulation and chain seed from the design and replicate.
+
+For endpoint $e$ and successful replicate $r$, let $m_{re}$ be the posterior
+median and $[L_{re},U_{re}]$ its central 90\% interval. Report
+\begin{equation}
+  \widehat C_e=\frac1{R_{\mathrm{ok}}}\sum_r
+    \mathbf1\{L_{re}\leq T_e^*\leq U_{re}\},\qquad
+  \widehat B_e=\frac1{R_{\mathrm{ok}}}\sum_r(m_{re}-T_e^*).
+\end{equation}
+Keep infinite medians and interval endpoints. Summarise precision by the
+median interval width, taking an interval with either endpoint infinite
+to be unbounded for this summary, and separately report the unbounded
+interval fraction, infinite-median fraction and mean posterior non-crossing
+probability. Do not report finite-only bias as unconditional bias.
+
+For a finite observed truth $y$, CRPS has the CDF representation
+\parencite{gneiting2007}
+\begin{equation}
+  \operatorname{CRPS}(F,y)=\int_0^\infty
+    \{F(t)-\mathbf1(y\leq t)\}^2\,dt.
+\end{equation}
+It diverges when $F$ has positive non-crossing mass, and may also diverge
+for heavy finite tails. The primary comparable score is therefore CRPS
+for $Z=g(T^*)$, where $g(t)=t/(\tau+t)$, $g(\infty)=1$ and
+$\tau=365.25$ days. This is a one-to-one bounded transformation, so its
+CRPS scores the full extended duration distribution. Also report the
+restricted day-scale score
+\begin{equation}
+  \operatorname{CRPS}_{H}(F,y)=\int_0^H
+    \{F(t)-\mathbf1(y\leq t)\}^2\,dt,
+  \qquad H=3652.5\text{ days},
+\end{equation}
+equivalently CRPS of $\min(T^*,H)$ against $\min(y,H)$. Check horizons
+1826.25 and 7305 days as sensitivities. These caps apply only to the score,
+not to posterior crossing times. Lower scores are better. Compute empirical
+CDF integrals exactly between sorted draws, avoiding cancellation of large
+terms in the pairwise-distance formula. Retain empirical unrestricted
+day-scale CRPS as a tail diagnostic; a finite Monte Carlo value does not
+establish finiteness of the underlying score.
+
+Also report mean bias and mean interval width on the bounded $g$ scale,
+which remain defined when raw duration summaries are infinite. Give Monte
+Carlo standard errors for finite means and Wilson 95\% intervals for
+coverage and proportions. Report planned, completed and converged counts
+for every model/review; primary metric summaries use converged fits only.
+Bound all-planned coverage by assigning every unsuccessful fit first a
+coverage failure and then a success. Retain unresolved fits and numerical
+failures in the outputs. Pointwise LOO is not needed for this study.
+
 \section{How the literature informs the project}\label{sec:literature-guide}
 
 \textbf{Plotkin and Gilbert (2012).} This short framework gives us the vocabulary needed to
