@@ -89,6 +89,20 @@ the other three families share the joint prior on initial, day-90 and
 day-365 latent titres. See the handout for the remaining biphasic parameter
 and the explicit relaxation of the initial component-weight restriction.
 
+For a compact LaTeX technical report covering all four prior specifications,
+assemble the completed pilot outputs and compile from `notes/`:
+
+```sh
+Rscript scripts/03-technical-report.R
+cd notes
+latexmk -pdf -outdir=../results/technical-report technical-report.tex
+```
+
+The editable source is `notes/technical-report.tex`. Generated input tables,
+vector figures, the PDF and input provenance are kept under
+`results/technical-report/`. The report includes calibration/prior tables
+and presents numerical results as figures.
+
 ## Layout
 
 | Path | Contents |

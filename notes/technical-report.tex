@@ -1,0 +1,326 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[british]{babel}
+\usepackage{amsmath,amssymb,booktabs,tabularx,graphicx,float}
+\usepackage{geometry,microtype,csquotes}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[backend=biber,style=authoryear,maxcitenames=2,maxbibnames=6,
+            doi=true,isbn=false,url=false]{biblatex}
+\usepackage[hidelinks]{hyperref}
+\geometry{margin=22mm}
+\addbibresource{references.bib}
+\graphicspath{{../results/technical-report/figures/}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\renewcommand{\arraystretch}{1.12}
+\newcommand{\reporttable}[1]{%
+  \input{../results/technical-report/tables/#1.tex}}
+\reporttable{results-macros}
+\hypersetup{pdftitle={Antibody duration: methodology and initial results},
+  pdfsubject={Single-participant comparison of four prior specifications}}
+
+\title{\textbf{Antibody duration: methodology and initial results}\\[0.3em]
+  \large Single-participant comparison of four prior specifications}
+\author{}
+\date{15 October 2026}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+\section{Models, estimands and calibration}
+Time is in days and titres are relative to mean convalescent neutralisation.
+For each fixed threshold $c_e$, $e\in\{\mathrm{sym},\mathrm{sev}\}$, define
+\begin{equation}
+  T_e^*=\inf\{t\geq0:c(t)\leq c_e\},\qquad \inf\varnothing=\infty.
+\end{equation}
+The target is individual duration. A trajectory initially at or below a
+threshold has $T_e^*=0$; the same posterior curve determines both durations,
+with $T_{\mathrm{sym}}^*\leq T_{\mathrm{sev}}^*$.
+
+The fitted families are
+\begin{align}
+  \text{Exponential:}\quad c(t)&=c_0e^{-kt}, & k&>0;\label{eq:exp}\\
+  \text{Biphasic:}\quad c(t)&=c_0\{(1-f)e^{-k_1t}+fe^{-k_2t}\},
+    & k_1&>k_2>0;\label{eq:bip}\\
+  \text{Power law:}\quad c(t)&=c_0(1+\alpha t)^{-\beta},
+    & \alpha,\beta&>0;\label{eq:power}\\
+  \text{Plateau:}\quad c(t)&=A_\infty+(c_0-A_\infty)e^{-kt},
+    & k&>0,\quad 0<A_\infty<c_0.\label{eq:plateau}
+\end{align}
+For the biphasic curve, $f$ is the initial titre fraction contributed by
+the slow component. Its half-lives and equal-contribution time satisfy
+\begin{equation}
+  k_r=\frac{\log2}{h_r},\quad
+  f=\frac{1}{1+e^{(k_1-k_2)t_s}},\quad
+  t_s=\frac{\log\{(1-f)/f\}}{k_1-k_2}.
+\end{equation}
+Uncensored observations follow
+\begin{equation}
+  \log y_j=\log c(t_j)+\epsilon_j,\qquad
+  \epsilon_j\overset{\mathrm{iid}}\sim N(0,\sigma_{\log}^2).
+\end{equation}
+There are no random effects or censored observations in this pilot.
+
+\begin{table}[H]
+\centering\small
+\caption{Generating parameters and fixed analysis anchors. Titres and
+thresholds use the convalescent-relative scale.}
+\reporttable{calibration}
+\label{tab:calibration}
+\end{table}
+The biphasic calibration is from \textcite{hogan2023}; the thresholds
+are fixed anchors for 50\% symptomatic/severe protection from
+\textcite{khoury2021}. Threshold uncertainty is not propagated here.
+
+For completeness, the proposed later mechanistic generator is
+\begin{equation}
+  \dot P_s=-\delta_sP_s,\qquad \dot P_l=-\delta_lP_l,\qquad
+  \dot c=\rho_sP_s+\rho_lP_l-\delta_cc.
+\end{equation}
+It is not used in the present simulation or fits.
+
+\section{Prior formulations}
+Let $t_a=90$ and define
+\begin{equation}
+  D_a=-\log\{c(t_a)/c_0\}>0,\qquad R_a=e^{-D_a}.
+\end{equation}
+All four specifications share the appropriate default/broader column in
+Table~\ref{tab:common}. $N(\mu,s^2)$ denotes a normal distribution with
+standard deviation $s$. All free variables are independent within a model;
+no additional priors are assigned to derived parameters.
+
+\begin{table}[H]
+\centering\small
+\caption{Common priors in both formulations.}
+\label{tab:common}
+\reporttable{common-priors}
+\end{table}
+
+\subsection{Early-only formulation}
+Every family has $c(0)=c_0$ and $c(t_a)=c_0R_a$.
+
+\paragraph{Exponential.} Set $k=D_a/t_a$ in Equation~\eqref{eq:exp}.
+
+\paragraph{Biphasic.} With free $u_f\in(0,1)$ and $z_q\in\mathbb R$, set
+\begin{equation}
+  f=u_f/2,\qquad q=1+e^{z_q},\qquad
+  (1-f)e^{-qst_a}+fe^{-st_a}=R_a,\qquad k_2=s,\quad k_1=qs.
+\end{equation}
+The equation has a unique $s>0$. Here $f<0.5$ and $t_s>0$.
+
+\paragraph{Power law.} With free $\beta>0$, set
+\begin{equation}
+  \alpha=(e^{D_a/\beta}-1)/t_a.
+\end{equation}
+
+\paragraph{Plateau.} With free $u_\infty\in(0,1)$, set
+\begin{equation}
+  A_\infty=u_\infty c_0R_a,\qquad r=A_\infty/c_0,\qquad
+  k=-t_a^{-1}\log\!\left(\frac{R_a-r}{1-r}\right).
+\end{equation}
+
+\begin{table}[H]
+\centering\small
+\caption{Additional priors for the early-only default and broader
+specifications. The rate-ratio centre is the value used in the code,
+$16.6\simeq581/35$.}
+\label{tab:early}
+\reporttable{early-shape-priors}
+\end{table}
+
+\subsection{Two-anchor formulation}
+For biphasic, power-law and plateau models, let $t_b=365$, $m=t_b/t_a$,
+and introduce $\rho\in(0,1)$:
+\begin{equation}
+  \rho=\frac{D_b-D_a}{(m-1)D_a},\qquad
+  D_b=D_a\{1+(m-1)\rho\},\qquad R_b=e^{-D_b}.
+\end{equation}
+Thus $R_a^m<R_b<R_a$ and all three families share the joint prior on
+$c_0,c(90),c(365)$. The exponential retains $k=D_a/t_a$ and its
+early-only prior; it has no free $\rho$.
+
+\paragraph{Power law.} Solve for $v>0$ and set
+\begin{equation}
+  \frac{\log\{1+m(e^v-1)\}}{v}=\frac{D_b}{D_a},\qquad
+  \beta=D_a/v,\qquad \alpha=(e^v-1)/t_a.
+\end{equation}
+
+\paragraph{Biphasic.} With the sole additional free variable
+$u_s\in(0,1)$, set
+\begin{equation}
+  k_2=u_s\rho D_a/t_a,\quad x=e^{-k_2t_a},\quad
+  f=\frac{R_a-y}{x-y},\quad
+  (1-f)y^m+fx^m=R_b,\quad k_1=-\log(y)/t_a.
+  \label{eq:anchor-mix}
+\end{equation}
+The root $y\in(0,R_a)$ is unique. Here $0<f<1$; $f$ and $t_s$ are
+derived, and $f>0.5$ (hence $t_s<0$) is permitted.
+
+\paragraph{Plateau.} Use Equation~\eqref{eq:anchor-mix} with $x=1$,
+then set $A_\infty=c_0f$ and $k=-\log(y)/t_a$.
+
+\begin{table}[H]
+\centering\small
+\caption{Additional priors for the two-anchor default and broader
+specifications. These replace Table~\ref{tab:early}.}
+\label{tab:anchors}
+\reporttable{two-anchor-priors}
+\end{table}
+The reference curve gives $D_a\simeq1.16$, $\rho\simeq0.25$ and
+$u_s\simeq0.37$. Priors are fixed across reviews. The day-365 anchor
+is a latent parameter, not an added observation.
+
+\section{Pilot design and computation}
+One participant is simulated from the biphasic calibration in
+Table~\ref{tab:calibration}. The \ObservationCount{} measurements are at
+$t_j=\operatorname{round}(365.25j/12)$, $j=0,\ldots,24$; the same noisy
+history is truncated at 91, 183, 274, 365, 548 and 730 days (labelled
+3, 6, 9, 12, 18 and 24 months). All four models are fitted under each
+of the four prior specifications. True individual crossing times are
+\TruthSym{} days (symptomatic) and \TruthSev{} days (severe).
+
+JAGS 5.0.0 uses four chains, initially 2,000 adaptation, 2,000 warm-up
+and 4,000 retained iterations per chain. Up to two retries multiply draws
+by four and warm-up by two. Require rank-normalised split
+$\widehat R<1.01$ and bulk/applicable tail ESS $\geq400$ for free
+parameters and duration functions. Diagnose $T^*/(365.25+T^*)$ (one at
+infinity) and non-constant non-crossing indicators. Constant
+outcome/quantile indicators have no ESS. Seeds derive from the design,
+replicate, model, prior specification and chain.
+
+Intervals below are equal-tailed 90\% posterior intervals. Non-crossing
+draws remain at $\infty$. Prior curves use 4,000 draws per family and
+specification; common RNG streams match the shared anchors. Extreme
+power-law prior durations are summarised on log time. Subsequent-visit
+predictions are evaluated only after fitting, using
+\begin{equation}
+  \ell_j=\log\left\{\frac1S\sum_{s=1}^S
+    p\bigl(\log y_j\mid\theta^{(s)}\bigr)\right\},\qquad
+  \overline\ell=\frac1{n_{\mathrm{future}}}\sum_j\ell_j.
+\end{equation}
+The future visits lie between the current and next review. Pointwise
+PSIS-LOO is descriptive; Pareto-$k>0.7$ flags unreliability and it does
+not validate long-term extrapolation.
+
+\section{Initial results}
+\paragraph{Computation.} Of 96 labelled model--prior--review combinations,
+\FitCount{} completed and all \ConvergedCount{} passed the declared checks,
+across \AttemptsCount{} sampling attempts including the numerical failure
+below. The two formulations
+give identical exponential posterior draws within each prior width.
+The broader two-anchor power law at three months failed to emit a valid
+duration result because some finite crossing times exceeded floating-point
+range. Its raw sampler output is retained; it is marked as missing rather
+than recoded as non-crossing. Only \ReliableLooCount{} of \FitCount{}
+completed fits had reliable pointwise PSIS-LOO diagnostics.
+
+\paragraph{Prior implications.} Matching the first-year anchors leaves
+substantial tail disagreement (Figures~\ref{fig:priors} and
+\ref{fig:non-cross}). The two-anchor power-law severe-duration prior has
+an approximate 95th percentile of $1.0\times10^{11}$ days (default) or
+$3.6\times10^{26}$ days (broader). These exploratory priors require
+further tail calibration before a main simulation study.
+
+\paragraph{Posterior duration.} The exponential estimates the severe
+crossing too early under every specification, with intervals excluding
+the true crossing (Figure~\ref{fig:duration}). At 24 months its default estimate is
+\EarlyDefaultExp{} days, below the true \TruthSev{} days. Under the
+early-only default prior the biphasic estimate is \EarlyDefaultBip{};
+under the two-anchor default it is \AnchorDefaultBip{}.
+All four biphasic intervals contain the true severe crossing. The four
+power-law intervals at 24 months exclude it from above. The plateau
+assigns probability one, to reported precision, to no severe crossing
+at 24 months. The higher-threshold estimates are much more similar among
+the flexible models after longer follow-up.
+
+Early fits can resemble one another while their
+tails differ (Figure~\ref{fig:posterior}). Subsequent-visit log scores
+(Figure~\ref{fig:future}) assess a shorter extrapolation than the severe
+threshold. All results concern one noisy individual history; interval
+containment here is not an estimate of empirical coverage.
+
+\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{prior-trajectories.pdf}
+\caption{\textbf{Prior latent trajectories for all four specifications.}
+Lines show medians and shading 90\% pointwise intervals. Rows identify the
+prior formulation and width; columns identify the model. Dashed lines
+are the two thresholds; dotted lines mark days 90 and 365. The
+exponential shares only the initial/day-90 priors. The two-anchor
+flexible families additionally share the day-365 prior.}
+\label{fig:priors}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{posterior-durations.pdf}
+\caption{\textbf{Individual threshold-crossing estimates.} Points are
+posterior medians and bars are 90\% intervals; horizontal dashed lines
+show generating truth. The display is capped at 20 years: ``Inf'' denotes
+an infinite upper limit, ``$>$'' a finite upper limit beyond the cap, and
+an open triangle at the cap an infinite median. The cross near the bottom
+marks the failed broader two-anchor power-law fit at three months. The
+two exponential rows of each width are identical.}
+\label{fig:duration}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{posterior-trajectories.pdf}
+\caption{\textbf{Posterior latent trajectories as follow-up accumulates.}
+Lines are medians and shading 90\% pointwise intervals. Black dashed
+curves are the generating trajectory; black points are observations
+available at that review. Dotted lines show the thresholds. Columns
+select four reviews; rows show all four prior specifications. The
+three-month broader two-anchor power-law curve is omitted because its
+duration output failed.}
+\label{fig:posterior}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{non-crossing.pdf}
+\caption{\textbf{Probability of never crossing each threshold.}
+Open diamonds show prior probabilities; filled points show posterior
+probabilities at successive reviews. All positive-rate exponential,
+biphasic and power-law draws eventually cross; the plateau permits a
+genuine non-crossing outcome. The failed broader two-anchor power-law
+fit at three months has no posterior point. These probabilities retain
+the infinite-duration mass omitted by a finite-only summary.}
+\label{fig:non-cross}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{future-prediction.pdf}
+\caption{\textbf{Prediction of withheld subsequent visits.} Each point is
+the mean log predictive density of observed log titres between the
+indicated review and the next review; higher is better. The four panels
+use identical observations and evaluation windows. No score is available
+after the final 24-month review. The failed three-month broader
+two-anchor power-law fit is omitted. These scores concern near-term
+prediction, not validation of the severe crossing time.}
+\label{fig:future}
+\end{figure}
+
+\clearpage
+\section*{Reproduction}
+From the repository root, run both pilot variants and the report assembler:
+\begin{verbatim}
+Rscript scripts/01-prior-pilot.R
+Rscript scripts/01-prior-pilot.R --two-anchor
+Rscript scripts/03-technical-report.R
+cd notes
+latexmk -pdf -outdir=../results/technical-report technical-report.tex
+\end{verbatim}
+The editable source is \texttt{notes/technical-report.tex}. The assembler
+validates the saved simulation, fit and score artefacts and writes vector
+figures, input tables, an input-file checksum manifest and session
+information to \texttt{results/technical-report/}. No new fits are made
+when rebuilding the report. Priors and calibration follow the handout;
+this report introduces no additional model assumptions.
+
+\printbibliography
+\end{document}
