@@ -74,6 +74,21 @@ reviews use the same noisy history. This is an individual-duration
 illustration, not a repeated-simulation coverage or adequacy result. The
 hierarchical, least-squares and general sweep workstreams remain separate.
 
+Repeat with the common day-90/day-365 anchor priors using:
+
+```sh
+Rscript scripts/01-prior-pilot.R --two-anchor
+Rscript scripts/02-prior-pilot-report.R --two-anchor
+```
+
+This uses the same simulated history and writes to
+`results/prior-pilot-two-anchor/` and `cache/prior-pilot-two-anchor/`.
+The report includes a comparison with the original pilot when its results
+are available. The exponential retains its original early-decline prior;
+the other three families share the joint prior on initial, day-90 and
+day-365 latent titres. See the handout for the remaining biphasic parameter
+and the explicit relaxation of the initial component-weight restriction.
+
 ## Layout
 
 | Path | Contents |

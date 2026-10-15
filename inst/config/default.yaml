@@ -63,6 +63,16 @@ fitting:
     sigma_median: 0.20
     rate_ratio_median: 16.6
     beta_median: 1.5
+    # Handout Table `tab:two-anchor-priors`; retain early-only options.
+    two_anchor:
+      later_day: 365
+      rho_median: 0.25
+      default:
+        rho_logit_sd: 1.0
+        slow_rate_fraction_beta: [2, 3]
+      broader:
+        rho_logit_sd: 1.5
+        slow_rate_fraction_beta: [1, 1.5]
     default:
       c0_log_sd: 0.5
       decline_log_sd: 0.5

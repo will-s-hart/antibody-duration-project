@@ -4,13 +4,17 @@ suppressMessages(pkgload::load_all(quiet = TRUE))
 library(ggplot2)
 library(dplyr)
 
-out_dir <- "results/prior-pilot"
+args <- commandArgs(trailingOnly = TRUE)
+anchored <- "--two-anchor" %in% args
+out_dir <- if (anchored) "results/prior-pilot-two-anchor" else
+  "results/prior-pilot"
 pilot <- readRDS(file.path(out_dir, "pilot.rds"))
 cfg <- pilot$cfg
+prior_levels <- unlist(cfg$pilot$prior_sets)
 colours <- c(exponential = "#C44335", biphasic = "#176B9B",
              powerlaw = "#7B5196", plateau = "#2D8263")
 theme_set(theme_minimal(base_size = 12))
-times <- sort(unique(c(seq(0, 2200, by = 15), 90)))
+times <- sort(unique(c(seq(0, 2200, by = 15), 90, 365)))
 
 curve_summary <- function(params, model, prior_set, followup_days = NA_real_) {
   log_mu <- early_log_curve(params, model, times)
@@ -23,33 +27,54 @@ curve_summary <- function(params, model, prior_set, followup_days = NA_real_) {
 
 prior_curves <- list()
 prior_durations <- list()
+anchor_checks <- list()
 for (set in cfg$pilot$prior_sets) {
   # Identical RNG streams give identical common draws across all families.
   seed <- derive_seed(paste("prior-predictive", set), cfg$pilot$replicate,
                       cfg$run$seed)
   for (model in cfg$pilot$models) {
     free <- draw_early_prior(model, cfg, set, 4000, seed)
-    pars <- early_transform(free, model)
+    p <- early_prior(cfg, set)
+    pars <- early_transform(free, model, p$reference_day,
+                              if (anchored) p$later_day else 365)
     key <- paste(set, model)
     prior_curves[[key]] <- curve_summary(pars, model, set)
+    if (anchored && model != "exponential") {
+      mu <- early_log_curve(pars, model, c(0, 90, 365))
+      anchor_checks[[key]] <- data.frame(
+        prior_set = set, model = model,
+        max_day90_log_error = max(abs(mu[, 2] - free$log_c0 + pars$D)),
+        max_day365_log_error = max(abs(mu[, 3] - free$log_c0 + pars$D_b)),
+        prob_f_above_half = if (model == "biphasic") mean(pars$f > .5)
+          else NA_real_
+      )
+    }
     for (endpoint in names(cfg$calibration$thresholds)) {
-      tt <- early_tstar(pars, model, cfg$calibration$thresholds[[endpoint]])
-      q <- quantile(tt, c(.05, .5, .95), names = FALSE)
+      log_tt <- early_log_tstar(pars, model,
+                                 cfg$calibration$thresholds[[endpoint]])
+      # Type 1 preserves atoms at zero/Inf and avoids Inf interpolation.
+      q <- exp(quantile(log_tt, c(.05, .5, .95), names = FALSE, type = 1))
       prior_durations[[paste(key, endpoint)]] <- data.frame(
         prior_set = set, model = model, endpoint = endpoint,
         lo_days = q[1], median_days = q[2], hi_days = q[3],
-        prob_no_cross = mean(is.infinite(tt))
+        prob_no_cross = mean(log_tt == Inf),
+        prob_finite_beyond_numeric_range = mean(is.finite(log_tt) &
+          log_tt > log(.Machine$double.xmax))
       )
     }
   }
 }
 prior_curves <- bind_rows(prior_curves)
 prior_curves$prior_set <- factor(prior_curves$prior_set,
-                                 levels = c("default", "broader"))
+                                 levels = prior_levels)
 prior_curves$model <- factor(prior_curves$model, levels = names(colours))
 prior_durations <- bind_rows(prior_durations)
 write.csv(prior_durations, file.path(out_dir, "prior-duration-summary.csv"),
            row.names = FALSE)
+if (length(anchor_checks)) {
+  write.csv(bind_rows(anchor_checks), file.path(out_dir, "anchor-checks.csv"),
+             row.names = FALSE)
+}
 thresholds <- data.frame(
   titre = unlist(cfg$calibration$thresholds),
   endpoint = names(cfg$calibration$thresholds)
@@ -59,7 +84,8 @@ prior_plot <- ggplot(prior_curves, aes(time_days, med)) +
   geom_line(aes(colour = model), linewidth = .7) +
   geom_hline(data = thresholds, aes(yintercept = titre),
              linetype = "dashed", colour = "grey45") +
-  geom_vline(xintercept = 90, linetype = "dotted", colour = "grey55") +
+  geom_vline(xintercept = if (anchored) c(90, 365) else 90,
+               linetype = "dotted", colour = "grey55") +
   facet_grid(prior_set ~ model) + scale_y_log10() +
   scale_colour_manual(values = colours) + scale_fill_manual(values = colours) +
   coord_cartesian(ylim = c(.001, 5)) +
@@ -67,7 +93,8 @@ prior_plot <- ggplot(prior_curves, aes(time_days, med)) +
         subtitle = "Latent titre: median and 90% prior interval",
         x = "Days since initial measurement", y = "Convalescent-relative titre",
         caption = paste0(
-          "Dotted line: day 90. Dashed lines: 0.202 and 0.030 ",
+          if (anchored) "Dotted lines: days 90 and 365. " else
+            "Dotted line: day 90. ", "Dashed lines: 0.202 and 0.030 ",
           "thresholds."
         )) +
   theme(legend.position = "none")
@@ -75,7 +102,7 @@ ggsave(file.path(out_dir, "prior-predictive.png"), prior_plot,
         width = 13, height = 7, dpi = 160)
 
 scores <- pilot$scores
-scores$prior_set <- factor(scores$prior_set, levels = c("default", "broader"))
+scores$prior_set <- factor(scores$prior_set, levels = prior_levels)
 scores$endpoint <- factor(scores$endpoint, levels = c("symptomatic", "severe"))
 scores$review_months <- cfg$design$followup_months[
   match(scores$followup_days, cfg$design$followup_days)
@@ -136,7 +163,7 @@ posterior_curves$review <- factor(posterior_curves$followup_days,
   levels = chosen_days,
   labels = paste(cfg$design$followup_months[c(1, 2, 4, 6)], "months"))
 posterior_curves$prior_set <- factor(posterior_curves$prior_set,
-                                     levels = c("default", "broader"))
+                                     levels = prior_levels)
 observations$review <- factor(observations$followup_days, levels = chosen_days,
   labels = levels(posterior_curves$review))
 trajectory_plot <- ggplot(posterior_curves,
@@ -192,7 +219,7 @@ escape_html <- function(x) {
 }
 html_table <- function(x) {
   fmt <- function(v) {
-    if (is.numeric(v)) v <- format(round(v, 2), trim = TRUE)
+    if (is.numeric(v)) v <- format(signif(v, 4), trim = TRUE)
     escape_html(as.character(v))
   }
   header <- paste0("<th>", escape_html(names(x)), "</th>", collapse = "")
@@ -263,6 +290,112 @@ findings <- c(
     "flexible.</li></ul>"
   )
 )
+if (anchored) {
+  findings <- c(
+    "<h2>What this realisation shows</h2><ul>",
+    sprintf(paste0(
+      "<li>The exponential retains its original prior and chains. ",
+      "At three months its severe-duration estimate is %.0f [%.0f, %.0f] ",
+      "days under the default and %.0f [%.0f, %.0f] under the broader ",
+      "prior; the true crossing is %.0f days.</li>"
+    ), early$tstar_med[1], early$tstar_lo[1], early$tstar_hi[1],
+       early$tstar_med[2], early$tstar_lo[2], early$tstar_hi[2],
+       pilot$truth_days["severe"]),
+    sprintf(paste0(
+      "<li>At 24 months the biphasic severe-duration estimates are ",
+      "%.0f [%.0f, %.0f] days under the default and ",
+      "%.0f [%.0f, %.0f] under the broader prior. These are individual ",
+      "posterior intervals from one noisy history.</li>"
+    ), late$tstar_med[1], late$tstar_lo[1], late$tstar_hi[1],
+       late$tstar_med[2], late$tstar_lo[2], late$tstar_hi[2]),
+    paste0(
+      "<li>The three flexible families now share the joint prior on ",
+      "initial, day-90 and day-365 latent titres. They need not agree ",
+      "between these anchors or about later threshold crossings. ",
+      "The day-365 prior supplies information beyond early reviews.</li>",
+      "<li>The extra biphasic variable is the slow rate as a fraction ",
+      "of the mean log-decay rate between days 90 and 365. The initial ",
+      "slow-component weight f is derived and may exceed one half.</li></ul>"
+    )
+  )
+  power_prior <- prior_durations[prior_durations$model == "powerlaw" &
+                                   prior_durations$endpoint == "severe", ]
+  findings <- c(findings, sprintf(paste0(
+    "<p class='note'>The anchor construction is coherent, but these ",
+    "exploratory priors are not yet calibrated for plausible long-term ",
+    "behaviour. The power-law severe-duration prior has a 95th percentile ",
+    "of %.2g days under the default and %.2g under the broader option. ",
+    "Matching first-year titres does not equalise information about the ",
+    "tail. Keep this as a sensitivity formulation before choosing priors ",
+    "for the main simulation study.</p>"
+  ), power_prior$hi_days[1], power_prior$hi_days[2]))
+}
+
+baseline_html <- character()
+baseline_path <- "results/prior-pilot/pilot.rds"
+if (anchored && file.exists(baseline_path)) {
+  baseline <- readRDS(baseline_path)
+  if (!identical(baseline$complete$obs, pilot$complete$obs)) {
+    stop("The baseline comparison must use identical observations")
+  }
+  old <- baseline$scores
+  old$prior_strength <- old$prior_set
+  old$formulation <- "Early only"
+  new <- pilot$scores
+  new$prior_strength <- sub("anchored_", "", new$prior_set)
+  new$formulation <- "Days 90 and 365"
+  both <- bind_rows(old, new)
+  both$review_months <- cfg$design$followup_months[
+    match(both$followup_days, cfg$design$followup_days)
+  ]
+  both$endpoint <- factor(both$endpoint, levels = c("symptomatic", "severe"))
+  both$prior_strength <- factor(both$prior_strength,
+                                 levels = c("default", "broader"))
+  both$x <- both$review_months + offset[both$model] +
+    ifelse(both$formulation == "Early only", -.09, .09)
+  both$plot_med <- pmin(both$tstar_med, cap)
+  both$plot_lo <- pmax(1, pmin(both$tstar_lo, cap))
+  both$plot_hi <- pmin(both$tstar_hi, cap)
+  both$upper_label <- ifelse(is.infinite(both$tstar_hi), "Inf",
+                              ifelse(both$tstar_hi > cap, ">", ""))
+  label_key <- with(both, paste(prior_strength, endpoint, model,
+                                 review_months, upper_label))
+  both$upper_label[duplicated(label_key)] <- ""
+  comparison_plot <- ggplot(both, aes(x, plot_med, colour = model,
+                                      shape = formulation)) +
+    geom_hline(data = truth, aes(yintercept = truth_days),
+                 inherit.aes = FALSE, linetype = "dashed", colour = "grey40") +
+    geom_linerange(aes(ymin = plot_lo, ymax = plot_hi,
+                         linetype = formulation), linewidth = .45) +
+    geom_point(data = both[is.finite(both$tstar_med), ], size = 1.8) +
+    geom_text(aes(y = plot_hi, label = upper_label), size = 2,
+                 vjust = -.5, show.legend = FALSE) +
+    facet_grid(prior_strength ~ endpoint) + scale_y_log10() +
+    scale_colour_manual(values = colours) +
+    scale_x_continuous(breaks = cfg$design$followup_months) +
+    coord_cartesian(ylim = c(70, cap*1.4), clip = "off") +
+    labs(title = "Effect of matching the second anchor",
+           subtitle = paste("Identical observations; individual medians",
+                              "and 90% intervals"),
+           x = "Available follow-up (months)", y = "Crossing time (days)",
+           caption = paste("Inf: infinite upper limit; >: finite upper",
+                             "limit beyond 20 years.")) +
+    theme(legend.position = "bottom")
+  ggsave(file.path(out_dir, "prior-formulation-comparison.png"),
+           comparison_plot, width = 14, height = 9, dpi = 160)
+  cols <- c("formulation", "prior_strength", "review_months", "model",
+              "endpoint", "tstar_med", "tstar_lo", "tstar_hi",
+              "prob_no_cross", "converged")
+  selected_both <- both[both$review_months %in% c(3, 12, 24), cols]
+  write.csv(selected_both,
+              file.path(out_dir, "prior-formulation-comparison.csv"),
+              row.names = FALSE)
+  baseline_html <- c("<h2>Comparison with the early-only formulation</h2>",
+    paste0("<p>Both analyses use exactly the same simulated observations. ",
+             "Inf is retained; flagged fits require caution.</p>"),
+    image_data(file.path(out_dir, "prior-formulation-comparison.png")),
+    html_table(selected_both))
+}
 if (is.null(pilot$failures)) {
   pilot$failures <- data.frame(key = character(), attempt = integer(),
                                message = character())
@@ -291,7 +424,7 @@ html <- c("<!doctype html><html lang='en'><meta charset='utf-8'>",
   paste0(
     "<p>First three steps of handout Section 6: recover a ",
     "biphasic truth, reveal longer follow-up, and compare four ",
-    "candidate families under two prior sets.</p>"
+    "candidate families under default and broader priors.</p>"
   ),
   sprintf(paste0(
     "<p>One simulated individual; %d monthly measurements ",
@@ -309,13 +442,18 @@ html <- c("<!doctype html><html lang='en'><meta charset='utf-8'>",
     "threshold.</p>"
   ),
   sprintf(paste0(
-    "<p>%d/%d fits passed the declared convergence checks. %d ",
+    "<p>%d/%d completed fits passed the declared convergence checks ",
+    "out of %d planned fits. %d fits failed to produce a result ",
+    "(see failures below). %d ",
     "pointwise LOO comparisons have Pareto-k above 0.7 or ",
     "unresolved convergence and are flagged as unreliable.</p>"
   ),
     sum(diagnostics$converged), nrow(diagnostics),
+    length(cfg$pilot$models) * length(cfg$pilot$prior_sets) *
+      length(cfg$design$followup_days), length(unique(pilot$failures$key)),
     sum(!diagnostics$loo_reliable)),
   findings,
+  baseline_html,
   "<h2>Duration estimates</h2>",
   image_data(file.path(out_dir, "duration-estimates.png")),
   "<h2>Posterior trajectories</h2>",
@@ -324,12 +462,21 @@ html <- c("<!doctype html><html lang='en'><meta charset='utf-8'>",
   paste0(
     "<p>Median and 90% intervals of latent trajectories. Both ",
     "columns preserve the common initial/day-90 prior across ",
-    "models; broadening changes tails and floor probabilities ",
+    "models; ", if (anchored) paste0(
+      "the flexible families additionally share the day-365 anchor. "
+    ) else "", "Broadening changes tails and floor probabilities ",
     "as well as dispersion. No future measurements enter these ",
     "priors.</p>"
   ),
   image_data(file.path(out_dir, "prior-predictive.png")),
   html_table(prior_durations),
+  if (anchored) paste0(
+    "<p>Finite power-law durations can exceed floating-point range ",
+    "under the broader prior. Quantiles are computed on log time; the ",
+    "separate numeric-range column records that finite tail mass. It ",
+    "is not included in the probability of never crossing.</p>"
+  ),
+  if (anchored) html_table(bind_rows(anchor_checks)),
   "<h2>Selected individual crossing estimates</h2>",
   paste0(
     "<p>All intervals are 90%. Inf is retained as an outcome. ",
@@ -338,6 +485,11 @@ html <- c("<!doctype html><html lang='en'><meta charset='utf-8'>",
   ),
   html_table(selected),
   "<h2>Sampler diagnostics</h2>", html_table(diagnostics),
+  if (nrow(pilot$failures)) c("<h2>Failures</h2>",
+    paste0("<p>These fits have no duration estimate in the figures or ",
+             "tables. Raw JAGS output is retained in the cache; no draws ",
+             "were dropped or recoded as never crossing.</p>"),
+    html_table(pilot$failures)),
   paste0(
     "<p>Four independent JAGS chains; initially 2000 ",
     "adaptation, 2000 warm-up and 4000 retained draws per ",
@@ -366,16 +518,18 @@ html <- c("<!doctype html><html lang='en'><meta charset='utf-8'>",
   html_table(future),
   paste0(
     "<h2>Reproduce</h2><pre>Rscript ",
-    "scripts/01-prior-pilot.R\nRscript ",
-    "scripts/02-prior-pilot-report.R</pre>"
+    "scripts/01-prior-pilot.R", if (anchored) " --two-anchor" else "",
+    "\nRscript scripts/02-prior-pilot-report.R",
+    if (anchored) " --two-anchor" else "", "</pre>"
   ),
   paste0(
     "<p>All source is R. JAGS must be installed separately; R ",
     "dependencies are recorded in renv.lock. Configuration, ",
     "session information, observations, posterior fits and ",
     "sampling attempts are saved alongside this report or in ",
-    "cache/prior-pilot. No private archived files are read by ",
+    if (anchored) "cache/prior-pilot-two-anchor. " else "cache/prior-pilot. ",
+    "No private archived files are read by ",
     "these scripts.</p></html>"
   ))
 writeLines(html, file.path(out_dir, "report.html"))
-cat("Wrote results/prior-pilot/report.html and three figures.\n")
+cat("Wrote ", out_dir, "/report.html and figures.\n", sep = "")

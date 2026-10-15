@@ -468,6 +468,103 @@ These priors specify homogeneous fits only; the hierarchical extension
 needs an explicit joint specification for population and random-effect
 parameters.
 
+\subsection*{An alternative with common day-90 and day-365 anchors}
+
+As a separate sensitivity formulation, match the joint prior on
+$c_0,c(90),c(365)$ across the three flexible families. Retain the original
+initial-level and day-90 prior for the exponential, which still extrapolates
+its early decline unchanged. This supplies common information about the
+first year without requiring agreement about later threshold crossings.
+The anchor days define latent parameters, not additional observations;
+their priors remain fixed at every review.
+
+Set $t_b=365$, $m=t_b/t_a$, and introduce
+\begin{equation}
+  \rho=\frac{D_b-D_a}{(m-1)D_a}\in(0,1),\qquad
+  D_b=D_a\{1+(m-1)\rho\},\qquad R_b=e^{-D_b}.
+  \label{eq:two-anchor}
+\end{equation}
+Thus $\rho$ is the average log-decay rate from day 90 to 365 divided by
+that from day 0 to 90. It enforces $R_a^m<R_b<R_a$: positive decline
+with deceleration. The reference biphasic trajectory gives
+$\rho\simeq0.25$. Independent priors directly on the three titres would
+not enforce these constraints.
+
+\paragraph{Power law.}
+Let $v>0$ solve
+\begin{equation}
+  \frac{\log\{1+m(e^v-1)\}}{v}=\frac{D_b}{D_a},\qquad
+  \beta=D_a/v,\qquad \alpha=(e^v-1)/t_a.
+\end{equation}
+The ratio decreases from $m$ to 1, so the anchors determine the two shape
+parameters uniquely. Use the power-law curve above.
+
+\paragraph{Biphasic exponential.}
+Introduce one additional free variable $u_s\in(0,1)$ and set
+\begin{equation}
+  k_2=u_s\rho D_a/t_a,\qquad x=e^{-k_2t_a}.
+\end{equation}
+The slow rate is a fraction of the average day-90-to-365 log-decay rate.
+Find $y\in(0,R_a)$ as the unique solution of
+\begin{equation}
+  f=\frac{R_a-y}{x-y},\qquad
+  (1-f)y^m+fx^m=R_b,\qquad k_1=-\log(y)/t_a.
+  \label{eq:two-anchor-mixture}
+\end{equation}
+The left-hand side decreases from $R_ax^{m-1}>R_b$ to $R_a^m<R_b$
+as $y$ runs from 0 to $R_a$. Every draw therefore gives positive ordered
+rates and $0<f<1$, without rejecting or reweighting the common anchors.
+Use Equation~\ref{eq:prior-biphasic} with $s=k_2$ and $q=k_1/k_2$;
+$f$, both half-lives and $t_s$ are derived. The reference curve has
+$u_s\simeq0.37$.
+
+For this formulation, relax the earlier restriction $f<0.5$. Some valid
+anchor combinations require a larger initial slow contribution; their
+equal-contribution time $t_s$ is negative. Restricting $f$ independently
+and rejecting incompatible draws would change the anchor distribution.
+This is an explicit difference between the two prior formulations.
+
+\paragraph{Plateau.}
+Use Equation~\ref{eq:two-anchor-mixture} with $x=1$, representing a
+zero-rate slow component. Set $A_\infty=c_0f$ and $k=-\log(y)/t_a$ in
+the plateau curve. Both shape parameters are then determined by the
+anchors. A positive floor still permits infinite crossing times.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Two-anchor sensitivity priors. The initial-level, day-90 decline
+and observation-error priors retain their respective columns in
+Table~\ref{tab:priors}. These replace the model-specific shape priors
+in that table, rather than supplementing them.}
+\label{tab:two-anchor-priors}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+Additional free variable & Default & Broader alternative \\
+\midrule
+Flexible families: $\operatorname{logit}\rho$
+  & $N(\operatorname{logit}0.25,\,1.0^2)$
+  & $N(\operatorname{logit}0.25,\,1.5^2)$ \\
+Biphasic only: $u_s$ & $\operatorname{Beta}(2,3)$
+  & $\operatorname{Beta}(1,1.5)$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All free variables in this formulation are independent. The two priors on
+$\rho$ have approximate 95\% ranges 0.045--0.70 and 0.017--0.86;
+both priors on $u_s$ have mean 0.40. These are workshop choices, not
+external estimates. Neither the earlier $f,q$ priors nor the earlier
+$\beta,u_\infty$ priors are also imposed. In particular, the plateau's
+non-crossing probabilities must be recomputed under these priors.
+
+Inspect prior trajectories and both crossing distributions before fitting,
+including the implied distribution of $f$ and probability $f>0.5$.
+Agreement at three anchors does not imply agreement between them or in
+the tail. Matching at day 365 also supplies prior information about an
+unobserved period at early reviews, so compare this formulation with the
+original early-only formulation rather than treating it as neutral.
+
 \section{A possible analysis programme}\label{sec:analysis}
 
 A simulation-first programme would create a full longitudinal dataset from a known trajectory,
@@ -503,7 +600,10 @@ participant and one simulated history from Table~\ref{tab:starting-values}.
 Monthly measurements include day zero and visits at rounded days
 $365.25j/12$, revealed at the configured 3, 6, 9, 12, 18 and 24 month
 reviews. Both prior columns in Table~\ref{tab:priors} are fitted to exactly
-the same measurements. This single realisation describes individual
+the same measurements. Repeat with both columns of
+Table~\ref{tab:two-anchor-priors}, using exactly the same simulated history,
+to separate differences due to the prior formulation from observation
+noise. This single realisation describes individual
 posterior uncertainty and misspecification; it cannot estimate empirical
 coverage or identify an adequate trial design.
 
@@ -521,6 +621,11 @@ than assigned a fictitious effective sample size. Extend
 sampling if needed, recording every attempt and unresolved failure.
 
 Compare posterior trajectories and both duration distributions. As a
+numerical check, calculate extreme power-law prior durations on the log
+scale before taking quantiles. A finite duration beyond floating-point
+range is not a non-crossing trajectory; record a numerical failure if it
+prevents a fitted result from meeting the shared output contract, retaining
+the sampler output for inspection. As a
 secondary descriptive comparison, report pointwise PSIS leave-one-out
 expected log predictive density for the observed log titres, with its
 Pareto-$k$ diagnostics; values above 0.7 flag an unreliable approximation.

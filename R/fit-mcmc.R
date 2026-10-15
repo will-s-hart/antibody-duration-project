@@ -49,6 +49,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
     if (!requireNamespace(pkg, quietly = TRUE)) stop("Install ", pkg)
   }
   p <- early_prior(cfg, prior_set)
+  anchored <- p$two_anchor && model != "exponential"
   obs <- data$obs
   if (any(obs$y_obs[obs$censor == "none"] <= 0)) {
     stop("Uncensored log-normal observations must be positive")
@@ -62,17 +63,25 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
     D_mean = log(p$decline_median), D_prec = 1 / p$decline_log_sd^2,
     sigma_mean = log(p$sigma_median), sigma_prec = 1 / p$sigma_log_sd^2
   )
-  if (model == "biphasic") {
+  if (anchored) {
+    jdata <- c(jdata, list(m = p$later_day / p$reference_day,
+                           rho_mean = qlogis(p$rho_median),
+                           rho_prec = 1 / p$rho_logit_sd^2))
+    if (model == "biphasic") {
+      jdata <- c(jdata, list(us_a = p$slow_rate_fraction_beta[1],
+                             us_b = p$slow_rate_fraction_beta[2]))
+    }
+  } else if (model == "biphasic") {
     jdata <- c(jdata, list(f_a = p$slow_fraction_beta[1],
                            f_b = p$slow_fraction_beta[2],
                            q_mean = log(p$rate_ratio_median - 1),
                            q_prec = 1 / p$rate_ratio_log_sd^2))
   }
-  if (model == "powerlaw") {
+  if (!anchored && model == "powerlaw") {
     jdata <- c(jdata, list(beta_mean = log(p$beta_median),
                            beta_prec = 1 / p$beta_log_sd^2))
   }
-  if (model == "plateau") {
+  if (!anchored && model == "plateau") {
     jdata <- c(jdata, list(u_a = p$floor_fraction_beta[1],
                            u_b = p$floor_fraction_beta[2]))
   }
@@ -105,7 +114,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
     }
   }
   model_file <- file.path(work_dir, "model.bug")
-  writeLines(.early_jags_model(model, blocks), model_file)
+  writeLines(.early_jags_model(model, blocks, prior_set), model_file)
   data_file <- file.path(work_dir, "data.R")
   dump(names(jdata), file = data_file, envir = list2env(jdata))
   commands <- c(sprintf("model in \"%s\"", model_file),
@@ -113,7 +122,10 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
                 sprintf("compile, nchains(%d)", sampler$chains))
   chain_seeds <- integer(sampler$chains)
   for (chain in seq_len(sampler$chains)) {
-    seed <- derive_seed(paste(data$cell$cell_id, model, prior_set, chain),
+    seed_set <- if (model == "exponential") {
+      sub("^anchored_", "", prior_set)
+    } else prior_set
+    seed <- derive_seed(paste(data$cell$cell_id, model, seed_set, chain),
                         data$cell$replicate, data$cell$seed)
     chain_seeds[chain] <- seed
     init <- as.list(draw_early_prior(model, cfg, prior_set, 1, seed)[1, ])
@@ -127,7 +139,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   stem <- file.path(work_dir, "samples")
   commands <- c(commands, "initialize", sprintf("adapt %d", sampler$adapt),
                 sprintf("update %d", sampler$warmup),
-                paste("monitor", early_free_names(model)),
+                paste("monitor", early_free_names(model, prior_set)),
                 sprintf("update %d", sampler$draws),
                 sprintf("coda *, stem(\"%s\")", stem), "exit")
   command_file <- file.path(work_dir, "run.cmd")
@@ -146,7 +158,8 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   chains <- do.call(coda::mcmc.list, chains)
   draws <- as.data.frame(as.matrix(chains))
   draws$chain_id <- rep(seq_len(sampler$chains), each = sampler$draws)
-  pars <- early_transform(draws, model, p$reference_day)
+  pars <- early_transform(draws, model, p$reference_day,
+                           if (anchored) p$later_day else 365)
   durations <- lapply(cfg$calibration$thresholds, function(thr) {
     early_tstar(pars, model, thr)
   })
@@ -187,7 +200,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
       message = if (diagnostics$converged) "Diagnostic thresholds passed" else
         "Failed diagnostic thresholds; inspect diagnostics_table"
     ),
-    ic = default_ic(n_par = length(early_free_names(model)),
+    ic = default_ic(n_par = length(early_free_names(model, prior_set)),
                     loo = loo_fit$estimates["looic", "Estimate"]),
     provenance = default_provenance(
       engine = "JAGS CLI", engine_version = readLines(log_file)[1],
@@ -210,7 +223,7 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   validate_fit_result(fit)
 }
 
-.early_jags_model <- function(model, likelihood) {
+.early_jags_model <- function(model, likelihood, prior_set = "default") {
   shared <- "log_c0 ~ dnorm(c0_mean, c0_prec)
     log_D ~ dnorm(D_mean, D_prec)
     log_sigma ~ dnorm(sigma_mean, sigma_prec)
@@ -244,6 +257,9 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
       log_r <- log(u_inf) - D
       k <- (D-log(1-u_inf)+log(1-exp(log_r))) / ta"
   )
+  if (startsWith(prior_set, "anchored_") && model != "exponential") {
+    shape <- .two_anchor_jags_shape(model)
+  }
   curve <- switch(model,
     exponential = "mu[i] <- log_c0 - k*t[i]",
     biphasic = "fast[i] <- log(1-f)-q*s*t[i]
@@ -260,6 +276,57 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   )
   paste("model {", shared, shape, "for (i in 1:N) {", curve, "}",
         paste(likelihood, collapse = "\n"), "}", sep = "\n")
+}
+
+.two_anchor_jags_shape <- function(model) {
+  common <- "z_rho ~ dnorm(rho_mean, rho_prec)
+    rho <- ilogit(z_rho)
+    Db <- D * (1 + (m-1)*rho)"
+  if (model == "powerlaw") {
+    return(paste(common, "lower[1] <- 0
+      upper[1] <- log(m)/((m-1)*rho)
+      for (b in 1:50) {
+        midpoint[b] <- (lower[b]+upper[b])/2
+        value[b] <- log(m-(m-1)*exp(-midpoint[b]))-
+          (m-1)*rho*midpoint[b]
+        above[b] <- step(value[b])
+        lower[b+1] <- above[b]*midpoint[b]+(1-above[b])*lower[b]
+        upper[b+1] <- above[b]*upper[b]+(1-above[b])*midpoint[b]
+      }
+      v <- (lower[51]+upper[51])/2
+      beta <- D/v
+      log_alpha <- v+log(1-exp(-v))-log(ta)"))
+  }
+  slow <- if (model == "biphasic") {
+    "u_s ~ dbeta(us_a, us_b)
+    slow_dim <- u_s*rho*D"
+  } else "slow_dim <- 0"
+  mix <- "lower[1] <- 0
+    upper[1] <- 1
+    z <- exp(-D+slow_dim)
+    for (b in 1:50) {
+      midpoint[b] <- (lower[b]+upper[b])/2
+      den[b] <- log(1-z*midpoint[b])
+      lf[b] <- -D+slow_dim+log(1-midpoint[b])-den[b]
+      lfast[b] <- log(1-z)-den[b]
+      a[b] <- lfast[b]+m*(-D+log(midpoint[b]))
+      c[b] <- lf[b]-m*slow_dim
+      mx[b] <- max(a[b],c[b])
+      value[b] <- mx[b]+log(exp(a[b]-mx[b])+exp(c[b]-mx[b]))
+      above[b] <- step(value[b]+Db)
+      lower[b+1] <- above[b]*midpoint[b]+(1-above[b])*lower[b]
+      upper[b+1] <- above[b]*upper[b]+(1-above[b])*midpoint[b]
+    }
+    w <- (lower[51]+upper[51])/2
+    log_f <- -D+slow_dim+log(1-w)-log(1-z*w)
+    fast_dim <- D-log(w)"
+  final <- if (model == "biphasic") {
+    "f <- exp(log_f)
+    s <- slow_dim/ta
+    q <- fast_dim/slow_dim"
+  } else "log_r <- log_f
+    k <- fast_dim/ta"
+  paste(common, slow, mix, final, sep = "\n")
 }
 
 .early_loglik <- function(log_mu, sigma, obs, cell) {
