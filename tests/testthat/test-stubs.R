@@ -4,11 +4,9 @@
 test_that("stubs refuse to run and name their workstream", {
   expect_error(fit_ls(NULL, "biphasic", NULL), "not implemented")
   expect_error(fit_ls(NULL, "biphasic", NULL), "\\(b\\) simulation")
-  expect_error(fit_mcmc(NULL, "biphasic", NULL), "\\(b\\) simulation")
   expect_error(fit_nlme(NULL, "biphasic", NULL), "\\(d\\) NLME")
   expect_error(check_calibration(NULL), "\\(c\\) mechanistic models")
   expect_error(simulate_mechanistic(NULL, NULL), "\\(c\\) mechanistic models")
-  expect_error(simulate_full(NULL, NULL), "\\(b\\) simulation")
   expect_error(score_fit(NULL, NULL, NULL), "\\(a\\) coordinator")
 })
 

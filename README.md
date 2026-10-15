@@ -14,6 +14,15 @@ study that answers that question.
 methodological source of truth: the question, the estimand, the candidate
 models and their starting values.
 
+Supporting material is collected under `notes/`:
+
+- [Dry-run summary](notes/dry-run/summary.pdf): a synthesis of the earlier
+  feasibility analyses, using their original calibration.
+- [Analysis figure schematic](notes/figures/analysis-schematic-v2.png): the
+  latest illustrative figure plan. The
+  [first draft](notes/figures/analysis-schematic-v1.png) is retained alongside
+  it. These schematics illustrate intended figures, not computed results.
+
 ## Getting started
 
 Requires R 4.3 or later. If you do not have R, [rig](https://github.com/r-lib/rig)
@@ -41,11 +50,35 @@ request:
 Rscript scripts/00-integration-gate.R
 ```
 
+## Single-participant prior pilot
+
+The first three steps of handout Section 6 can be illustrated with one
+simulated participant, monthly measurements and reviews through 24 months:
+
+```sh
+Rscript scripts/01-prior-pilot.R
+Rscript scripts/02-prior-pilot-report.R
+```
+
+Install the JAGS command-line sampler separately, then use `renv::restore()`
+for the R dependencies. The pilot calls JAGS directly; it does not need the
+`rjags` connector. Four independent chains fit all four families under both
+Section 5 prior sets. Failed convergence checks trigger longer sampling;
+fits, attempts and errors are retained in `cache/prior-pilot/` and
+`results/prior-pilot/`. Resume reuses fits only when data, configuration and
+fitting implementation match. Add `--refit` to repeat all fits.
+
+Open `results/prior-pilot/report.html` for the self-contained report and
+figures. Both threshold durations come from each fitted trajectory, and all
+reviews use the same noisy history. This is an individual-duration
+illustration, not a repeated-simulation coverage or adequacy result. The
+hierarchical, least-squares and general sweep workstreams remain separate.
+
 ## Layout
 
 | Path | Contents |
 | --- | --- |
-| [notes/](notes/) | Participant handout and bibliography |
+| [notes/](notes/) | Handout, bibliography, dry-run summary and figure plans |
 | [R/](R/) | Package source: shared schemas, models, one file per workstream |
 | [inst/config/default.yaml](inst/config/default.yaml) | Calibration, design grid and adequacy rules |
 | [scripts/](scripts/) | Entry points, starting with the integration gate |

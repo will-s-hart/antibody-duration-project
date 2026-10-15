@@ -1,12 +1,14 @@
 ^renv$
 ^renv\.lock$
 ^\.Rprofile$
+^\.renvignore$
 ^notes$
 ^scripts$
 ^slides$
 ^_will$
 ^_old$
 ^results$
+^paper$
 ^cache$
 ^\.github$
 ^\.claude$

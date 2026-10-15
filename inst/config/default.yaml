@@ -55,6 +55,45 @@ design:
 fitting:
   models: [biphasic, exponential]
   interval_level: 0.90
+  # Handout Section 5, Table `tab:priors`: priors on free variables.
+  priors:
+    reference_day: 90
+    c0_median: 0.92
+    decline_median: 1.16
+    sigma_median: 0.20
+    rate_ratio_median: 16.6
+    beta_median: 1.5
+    default:
+      c0_log_sd: 0.5
+      decline_log_sd: 0.5
+      sigma_log_sd: 0.5
+      slow_fraction_beta: [2, 3]
+      rate_ratio_log_sd: 0.8
+      beta_log_sd: 0.7
+      floor_fraction_beta: [1, 1]
+    broader:
+      c0_log_sd: 0.8
+      decline_log_sd: 0.8
+      sigma_log_sd: 0.7
+      slow_fraction_beta: [1, 1.5]
+      rate_ratio_log_sd: 1.1
+      beta_log_sd: 1.0
+      floor_fraction_beta: [1, 1]
+  sampler:
+    chains: 4
+    adapt: 2000
+    warmup: 2000
+    draws: 4000
+    rhat_max: 1.01
+    ess_min: 400
+
+# Handout Section 6: one realisation, not a coverage or adequacy study.
+pilot:
+  n_participants: 1
+  visits_per_year: 12
+  replicate: 1
+  prior_sets: [default, broader]
+  models: [exponential, biphasic, powerlaw, plateau]
 
 # Adequacy rules. A design is called provisionally adequate only when all
 # three hold; over-coverage on its own is not a failure, but a very wide or

@@ -261,6 +261,198 @@ The uncited workshop choices in the table are deliberately round simulation defa
 literature estimates. The workshop may choose a different vaccine, dose, assay normalisation or
 tail calibration before any headline analysis.
 
+\section{Proposed priors with a common early decline}\label{sec:priors}
+
+For the initial homogeneous analysis, we propose matching prior information
+about the early antibody trajectory across candidate families. Their
+long-term predictions may differ: an exponential can estimate early decline
+precisely yet confidently misestimate a much later threshold crossing. The
+priors below are workshop modelling choices centred on the calibration in
+Table~\ref{tab:starting-values}, not published estimates of prior uncertainty.
+They specify fitting assumptions separately from the generating truth.
+
+Fit each family once at each review, then calculate both crossing times from
+every posterior trajectory draw, using $c_{\mathrm{sym}}=0.202$ and
+$c_{\mathrm{sev}}=0.030$. This preserves their joint uncertainty and gives
+$T^*_{\mathrm{sym}}\leq T^*_{\mathrm{sev}}$. Keep the selected prior
+specification fixed across review dates, cohort sizes and truth scenarios;
+do not recalculate its centres from each simulated dataset. The thresholds
+are fixed protection anchors for this initial comparison, with their
+uncertainty reserved for a separate sensitivity analysis.
+
+\subsection*{Common early-trajectory parameters and prior options}
+
+Let the reference day be $t_a=90$ and define the positive cumulative log
+decline and the fraction remaining by
+\begin{equation}
+  D_a=-\log\{c(t_a)/c_0\}>0,\qquad R_a=e^{-D_a}.
+  \label{eq:prior-anchor}
+\end{equation}
+Every family is parameterised so that $c(0)=c_0$ and $c(t_a)=c_0R_a$.
+Consequently, the joint prior for these two titres is identical across
+families. Curvature between these times remains model-specific. The
+reference day stays at 90 days even when a review occurs earlier or later;
+it defines a parameter, not an additional observation.
+
+Table~\ref{tab:priors} gives a default and a broader sensitivity option.
+All listed free variables are mutually independent within a family; derived
+rates, half-lives and titres will generally be dependent. All logarithms are
+natural, $N(\mu,s^2)$ denotes a normal distribution with standard deviation
+$s$, and all times are in days. The additional free variables
+$u_f,z_q,\beta,u_\infty$ are defined in the transformations below.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Proposed fitting priors for the homogeneous comparison. Choose a
+whole column for a run; the common priors apply to every candidate family.}
+\label{tab:priors}
+\begin{tabularx}{\textwidth}{@{}
+  >{\raggedright\arraybackslash}p{0.25\textwidth}
+  >{\centering\arraybackslash}X
+  >{\centering\arraybackslash}X@{}}
+\toprule
+Free variable & Default & Broader alternative \\
+\midrule
+Common: $\log c_0$ & $N(\log 0.92,\,0.5^2)$
+  & $N(\log 0.92,\,0.8^2)$ \\
+Common: $\log D_a$ & $N(\log 1.16,\,0.5^2)$
+  & $N(\log 1.16,\,0.8^2)$ \\
+Common: $\log\sigma_{\log}$ & $N(\log 0.20,\,0.5^2)$
+  & $N(\log 0.20,\,0.7^2)$ \\
+Biphasic: $u_f$ & $\operatorname{Beta}(2,3)$
+  & $\operatorname{Beta}(1,1.5)$ \\
+Biphasic: $z_q$ & $N(\log(581/35-1),\,0.8^2)$
+  & $N(\log(581/35-1),\,1.1^2)$ \\
+Power law: $\log\beta$ & $N(\log 1.5,\,0.7^2)$
+  & $N(\log 1.5,\,1.0^2)$ \\
+Plateau: $u_\infty$ & $\operatorname{Beta}(1,1)$
+  & $\operatorname{Beta}(1,1)$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The centre $D_a=1.16$ is the rounded day-90 log decline of the reference
+biphasic curve. Under the default, the approximate 95\% prior ranges are
+0.35--2.45 for $c_0$, 0.045--0.65 for $R_a$, and 0.075--0.53 for
+$\sigma_{\log}$. The broader option widens these to 0.19--4.41,
+0.0038--0.79, and 0.051--0.79, respectively. It retains the same log-scale
+centres and the same mean $f=0.20$, while reducing concentration around
+them. The plateau fraction is already uniform and is left unchanged.
+``Broader'' refers to these sampling scales, not to a claim of less
+information about every derived quantity: more diffuse priors can increase
+mass on extremely long durations or initial titres below a threshold.
+
+\subsection*{Model-specific transformations}
+
+\paragraph{Single exponential.}
+No additional free parameter is needed. Set
+\begin{equation}
+  k=D_a/t_a,\qquad c(t)=c_0e^{-kt}.
+  \label{eq:prior-exponential}
+\end{equation}
+The default median half-life is approximately 54 days. The model extends
+this early average log decline indefinitely; its late slope is not adjusted
+to resemble the more flexible families.
+
+\paragraph{Biphasic exponential.}
+Set $f=u_f/2$, $q=1+e^{z_q}$, and write
+\begin{equation}
+  c(t)=c_0\{(1-f)e^{-qst}+fe^{-st}\},\qquad s=k_2,\quad q=k_1/k_2.
+  \label{eq:prior-biphasic}
+\end{equation}
+Here $f$ is the fraction of the initial titre contributed by the slow
+component, rather than a fraction of participants. Given $D_a,f,q$, obtain
+$s>0$ as the unique solution of
+\begin{equation}
+  (1-f)e^{-qst_a}+fe^{-st_a}=R_a.
+  \label{eq:prior-biphasic-root}
+\end{equation}
+The left-hand side decreases continuously from 1 to 0, so a solution exists
+for every allowed draw. This is the same trajectory family as
+Equation~\ref{eq:biphasic}, with
+\begin{equation}
+  h_1=\frac{\log 2}{qs},\qquad h_2=\frac{\log 2}{s},\qquad
+  t_s=\frac{\log\{(1-f)/f\}}{(q-1)s}.
+  \label{eq:prior-biphasic-map}
+\end{equation}
+The restriction $0<f<0.5$ specifies a positive switching time and an
+initially larger fast contribution. Under the default, $f$ has mean 0.20
+and an approximate 95\% range of 0.034--0.403; $q$ has median 16.6 and
+an approximate 95\% range of 4.3--75.8. At $D_a=1.16$, $f=0.20$ and
+$q=581/35$, the implied half-lives are about 35 and 579 days, with a
+74-day switching time. Sample the free variables in
+Table~\ref{tab:priors} and transform them; do not add independent priors on
+$h_1,h_2,t_s$ or $s$.
+
+\paragraph{Power-law decay.}
+Given $D_a$ and $\beta$, set
+\begin{equation}
+  \alpha=\frac{e^{D_a/\beta}-1}{t_a},\qquad
+  c(t)=c_0(1+\alpha t)^{-\beta}.
+  \label{eq:prior-powerlaw}
+\end{equation}
+The default approximate 95\% range for $\beta$ is 0.38--5.91; the
+broader option gives 0.21--10.65. This allows substantial variation in
+deceleration while preserving the common day-90 decline. The prior on
+$\alpha$ is induced by this transformation, not specified independently.
+
+\paragraph{Plateau or set-point.}
+Let $u_\infty$ be the floor as a fraction of the day-90 titre and set
+\begin{align}
+  A_\infty&=u_\infty c_0R_a,\qquad r=A_\infty/c_0, \\
+  k&=-\frac{1}{t_a}\log\!\left(\frac{R_a-r}{1-r}\right),\qquad
+  c(t)=A_\infty+(c_0-A_\infty)e^{-kt}.
+  \label{eq:prior-plateau}
+\end{align}
+Because $0<r<R_a<1$, the rate is positive and the floor lies below the
+day-90 titre. The uniform prior on $u_\infty$ permits crossing both
+thresholds, only the higher threshold, or neither. Under the default
+common priors, the prior non-crossing probabilities are approximately 0.29
+for the symptomatic anchor and 0.83 for the severe anchor. These are prior
+implications of the floor assumption and should be reported alongside
+posterior probabilities, rather than attributed entirely to the data.
+
+\subsection*{Interpretation and checks before scored runs}
+
+Table~\ref{tab:prior-example} illustrates the intended agreement in early
+behaviour and disagreement in extrapolation. It uses selected free
+parameter values, not marginal prior medians of the crossing times. Its
+homogeneous trajectory has one common duration for all participants; these
+values do not represent a heterogeneous population-duration estimand.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Illustrative curves at $c_0=0.92$, $D_a=1.16$, and, where
+applicable, $f=0.20$, $q=581/35$, $\beta=1.5$, $u_\infty=0.5$.
+Durations are rounded to whole days.}
+\label{tab:prior-example}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Family & $c(30)$ & $c(90)$ & $T^*_{\mathrm{sym}}$ (days)
+  & $T^*_{\mathrm{sev}}$ (days) \\
+\midrule
+Exponential & 0.625 & 0.288 & 118 & 266 \\
+Biphasic & 0.583 & 0.288 & 139 & 1516 \\
+Power law & 0.562 & 0.288 & 135 & 678 \\
+Plateau & 0.587 & 0.288 & 139 & $\infty$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Before scored runs, inspect prior predictive trajectories over both the
+observed and extrapolated periods, including the joint distribution of the
+two crossing times and probabilities of remaining above each threshold at
+fixed horizons. Retain genuinely non-crossing draws as $T^*=\infty$;
+a crossing beyond a numerical search horizon is a different event. A draw
+starting at or below a threshold has crossing time zero. Compare the default
+and broader columns as declared sensitivity runs, reporting whether a
+short-follow-up severe-duration conclusion depends on the tail priors.
+These priors specify homogeneous fits only; the hierarchical extension
+needs an explicit joint specification for population and random-effect
+parameters.
+
 \section{A possible analysis programme}\label{sec:analysis}
 
 A simulation-first programme would create a full longitudinal dataset from a known trajectory,
@@ -288,6 +480,40 @@ COVID-19; which model families and parameterisations are worth pursuing; how inf
 design should be handled; what evidence should be sufficient to conclude durability follow-up;
 which comparisons would be most informative; and what degree of extrapolation would be acceptable
 to a trial designer.
+
+\subsection*{A single-participant computational pilot}
+
+An initial illustration of the first three steps uses one homogeneous
+participant and one simulated history from Table~\ref{tab:starting-values}.
+Monthly measurements include day zero and visits at rounded days
+$365.25j/12$, revealed at the configured 3, 6, 9, 12, 18 and 24 month
+reviews. Both prior columns in Table~\ref{tab:priors} are fitted to exactly
+the same measurements. This single realisation describes individual
+posterior uncertainty and misspecification; it cannot estimate empirical
+coverage or identify an adequate trial design.
+
+Use four independent JAGS chains, initially with 2000 adaptation iterations,
+2000 further warm-up iterations and 4000 retained draws per chain. Require
+rank-normalised split $\widehat R<1.01$ and bulk and tail effective sample
+sizes of at least 400 for the free parameters and duration-relevant
+functions. For a potentially infinite duration, diagnose the bounded
+transform $T^*/(365.25+T^*)$, defined as 1 at infinity, and separately
+check a non-constant non-crossing indicator. If a duration quantile falls
+on an atom so that its quantile indicator is constant, its tail effective
+sample size is not applicable; use the non-constant quantile indicators
+and the bulk diagnostic. Constant indicators are reported as such rather
+than assigned a fictitious effective sample size. Extend
+sampling if needed, recording every attempt and unresolved failure.
+
+Compare posterior trajectories and both duration distributions. As a
+secondary descriptive comparison, report pointwise PSIS leave-one-out
+expected log predictive density for the observed log titres, with its
+Pareto-$k$ diagnostics; values above 0.7 flag an unreliable approximation.
+This comparison concerns interpolation among observed visits and does not
+validate long-term extrapolation. Also evaluate predictions for the
+subsequent observed visits withheld at each review, clearly separating this
+simulation check from information available to the fit. Inspect prior
+predictive trajectories under both prior sets before interpreting results.
 
 \section{How the literature informs the project}\label{sec:literature-guide}
 

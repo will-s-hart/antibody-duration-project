@@ -27,17 +27,21 @@ Suggests:
     boot,
     brms,
     cmdstanr,
+    coda,
     deSolve,
     minpack.lm,
     nlme,
     nlmixr2,
     numDeriv,
+    loo,
     patchwork,
     pkgload,
+    posterior,
     rjags,
     saemix,
     testthat (>= 3.0.0)
 Additional_repositories: https://stan-dev.r-universe.dev
+SystemRequirements: JAGS (>= 4.3.0) for the optional command-line MCMC engine
 Config/testthat/edition: 3
 Roxygen: false
 RoxygenNote: NA

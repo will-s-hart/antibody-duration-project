@@ -33,7 +33,45 @@
 #'   holds the population target.
 simulate_full <- function(cell, cfg, horizon_days = 1200,
                           dense_visits_per_year = 52) {
-  .not_implemented("simulate_full", "(b) simulation and inference")
+  validate_design_cell(cell)
+  if (cell$truth_model != "biphasic" || cell$heterogeneity) {
+    stop("simulate_full(): this initial implementation supports ",
+         "homogeneous biphasic truth only")
+  }
+  if (horizon_days < cell$followup_days) {
+    stop("horizon_days must include the last review")
+  }
+  # Store daily measurements, plus the requested dense grid. Reduction can
+  # then select rounded-day visits without moving their dates or redrawing.
+  times <- sort(unique(c(seq(0, horizon_days, by = 1), horizon_days,
+                         round(seq(0, horizon_days,
+                                   by = 365.25 / dense_visits_per_year)))))
+  times <- times[times <= horizon_days]
+  b <- cfg$calibration$biphasic
+  latent <- curve_biphasic(times, b$c0, b$h1_days, b$h2_days, b$ts_days)
+  # Use the complete-history design seed so changing a review never changes
+  # the history. The driver supplies this same full object to every review.
+  obs <- .with_seed(cell$seed, do.call(rbind, lapply(
+    seq_len(cell$n_participants), function(i) {
+      o <- observe(latent, cell$sigma_log)
+      data.frame(participant_id = as.integer(i), time_days = times,
+                 y_obs = o$y_obs, censor = o$censor)
+    }
+  )))
+  truth <- data.frame(
+    participant_id = seq_len(cell$n_participants), c0 = b$c0,
+    h1 = b$h1_days, h2 = b$h2_days, ts = b$ts_days,
+    tstar_days = tstar("biphasic", list(c0 = b$c0, h1 = b$h1_days,
+                                      h2 = b$h2_days, ts = b$ts_days),
+                        cell$c_thr)
+  )
+  full_cell <- cell
+  full_cell$followup_days <- as.numeric(horizon_days)
+  full_cell$visits_per_year <- as.numeric(dense_visits_per_year)
+  validate_sim_dataset(sim_dataset(
+    full_cell, obs, truth, truth$tstar_days[1],
+    extra_meta = list(mock = FALSE, complete_history = TRUE)
+  ))
 }
 
 #' Reduce a complete history to the data available at a trial review.
@@ -46,7 +84,32 @@ simulate_full <- function(cell, cfg, horizon_days = 1200,
 #' @return a [sim_dataset()] carrying `cell`, passing [validate_sim_dataset()].
 #'   `$truth` is unchanged: the truth does not depend on what was observed.
 reduce_to_review <- function(full, cell) {
-  .not_implemented("reduce_to_review", "(b) simulation and inference")
+  validate_sim_dataset(full)
+  validate_design_cell(cell)
+  if (cell$n_participants != full$cell$n_participants ||
+      cell$followup_days > full$cell$followup_days) {
+    stop("Review is not contained in the complete history")
+  }
+  times <- unique(round(seq(0, cell$followup_days + 0.5,
+                            by = 365.25 / cell$visits_per_year)))
+  times <- times[times <= cell$followup_days]
+  if (!all(times %in% full$obs$time_days)) {
+    stop("Complete history does not contain the planned visits")
+  }
+  obs <- full$obs[full$obs$time_days %in% times, , drop = FALSE]
+  if (!is.na(cell$lloq)) {
+    left <- obs$y_obs < cell$lloq
+    obs$censor[left] <- "left"
+    obs$y_obs[left] <- NA_real_
+  }
+  if (!is.na(cell$uloq)) {
+    right <- !is.na(obs$y_obs) & obs$y_obs > cell$uloq
+    obs$censor[right] <- "right"
+    obs$y_obs[right] <- NA_real_
+  }
+  validate_sim_dataset(sim_dataset(cell, obs, full$truth,
+                                   full$meta$population_tstar_days,
+                                   extra_meta = list(mock = FALSE)))
 }
 
 #' Simulate and reduce in one step.
@@ -62,7 +125,15 @@ make_dataset <- function(cell, cfg, ...) {
 #' quantification limits. Censored rows carry `NA` in `y_obs`; see
 #' [sim_dataset()] for why the limit is not substituted for the value.
 observe <- function(c_true, sigma_log, lloq = NA_real_, uloq = NA_real_) {
-  .not_implemented("observe", "(b) simulation and inference")
+  if (any(!is.finite(c_true) | c_true <= 0) || sigma_log <= 0) {
+    stop("observe(): positive titres and log-error SD are required")
+  }
+  y <- exp(log(c_true) + rnorm(length(c_true), 0, sigma_log))
+  censor <- rep("none", length(y))
+  if (!is.na(lloq)) censor[y < lloq] <- "left"
+  if (!is.na(uloq)) censor[y > uloq] <- "right"
+  y[censor != "none"] <- NA_real_
+  data.frame(y_obs = y, censor = censor)
 }
 
 #' Draw correlated per-participant random effects on `c0` and `h2`.
