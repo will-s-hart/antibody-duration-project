@@ -280,7 +280,7 @@ do not recalculate its centres from each simulated dataset. The thresholds
 are fixed protection anchors for this initial comparison, with their
 uncertainty reserved for a separate sensitivity analysis.
 
-\subsection*{Common early-trajectory parameters and prior options}
+\subsection*{Common early-trajectory parameters}
 
 Let the reference day be $t_a=90$ and define the positive cumulative log
 decline and the fraction remaining by
@@ -294,12 +294,78 @@ families. Curvature between these times remains model-specific. The
 reference day stays at 90 days even when a review occurs earlier or later;
 it defines a parameter, not an additional observation.
 
-Table~\ref{tab:priors} gives a default and a broader sensitivity option.
-All listed free variables are mutually independent within a family; derived
-rates, half-lives and titres will generally be dependent. All logarithms are
-natural, $N(\mu,s^2)$ denotes a normal distribution with standard deviation
-$s$, and all times are in days. The additional free variables
-$u_f,z_q,\beta,u_\infty$ are defined in the transformations below.
+\subsection*{Consistent model parameterisations}
+
+The following transformations introduce the additional free variables and
+ensure that every family has the common initial titre and day-90 decline.
+All logarithms are natural, and all times are in days.
+
+\paragraph{Single exponential.}
+No additional free parameter is needed. Set
+\begin{equation}
+  k=D_a/t_a,\qquad c(t)=c_0e^{-kt}.
+  \label{eq:prior-exponential}
+\end{equation}
+The model extends this early average log decline indefinitely; its late
+slope is not adjusted to resemble the more flexible families.
+
+\paragraph{Biphasic exponential.}
+Introduce $u_f\in(0,1)$ and $z_q\in\mathbb{R}$. Set $f=u_f/2$,
+$q=1+e^{z_q}$, and write
+\begin{equation}
+  c(t)=c_0\{(1-f)e^{-qst}+fe^{-st}\},\qquad s=k_2,\quad q=k_1/k_2.
+  \label{eq:prior-biphasic}
+\end{equation}
+Here $f$ is the fraction of the initial titre contributed by the slow
+component, rather than a fraction of participants. Given $D_a,f,q$, obtain
+$s>0$ as the unique solution of
+\begin{equation}
+  (1-f)e^{-qst_a}+fe^{-st_a}=R_a.
+  \label{eq:prior-biphasic-root}
+\end{equation}
+The left-hand side decreases continuously from 1 to 0, so a solution exists
+for every allowed draw. This is the same trajectory family as
+Equation~\ref{eq:biphasic}, with
+\begin{equation}
+  h_1=\frac{\log 2}{qs},\qquad h_2=\frac{\log 2}{s},\qquad
+  t_s=\frac{\log\{(1-f)/f\}}{(q-1)s}.
+  \label{eq:prior-biphasic-map}
+\end{equation}
+The restriction $0<f<0.5$ specifies a positive switching time and an
+initially larger fast contribution. The half-lives, switching time and
+slow rate are derived from $D_a,u_f,z_q$ rather than free parameters.
+
+\paragraph{Power-law decay.}
+Introduce the free exponent $\beta>0$. Given $D_a$ and $\beta$, set
+\begin{equation}
+  \alpha=\frac{e^{D_a/\beta}-1}{t_a},\qquad
+  c(t)=c_0(1+\alpha t)^{-\beta}.
+  \label{eq:prior-powerlaw}
+\end{equation}
+The exponent controls deceleration while $\alpha$ is determined by the
+common day-90 decline and $\beta$.
+
+\paragraph{Plateau or set-point.}
+Introduce $u_\infty\in(0,1)$, the floor as a fraction of the day-90 titre,
+and set
+\begin{align}
+  A_\infty&=u_\infty c_0R_a,\qquad r=A_\infty/c_0, \\
+  k&=-\frac{1}{t_a}\log\!\left(\frac{R_a-r}{1-r}\right),\qquad
+  c(t)=A_\infty+(c_0-A_\infty)e^{-kt}.
+  \label{eq:prior-plateau}
+\end{align}
+Because $0<r<R_a<1$, the rate is positive and the floor lies below the
+day-90 titre. Depending on the floor, a trajectory can cross both
+thresholds, only the higher threshold, or neither.
+
+\subsection*{Default and broader prior options}
+
+With these parameterisations, Table~\ref{tab:priors} specifies priors on
+the common variables $\log c_0,\log D_a,\log\sigma_{\log}$ and each
+family's additional free variables. All listed variables are mutually
+independent within a family; derived rates, half-lives and titres will
+generally be dependent. Here $N(\mu,s^2)$ denotes a normal distribution
+with standard deviation $s$.
 
 \begin{table}[H]
 \centering
@@ -332,6 +398,10 @@ Plateau: $u_\infty$ & $\operatorname{Beta}(1,1)$
 \end{tabularx}
 \end{table}
 
+Sample these free variables and transform them as above; do not add
+independent priors on derived quantities such as $h_1,h_2,t_s,s$ or
+$\alpha$.
+
 The centre $D_a=1.16$ is the rounded day-90 log decline of the reference
 biphasic curve. Under the default, the approximate 95\% prior ranges are
 0.35--2.45 for $c_0$, 0.045--0.65 for $R_a$, and 0.075--0.53 for
@@ -343,75 +413,20 @@ them. The plateau fraction is already uniform and is left unchanged.
 information about every derived quantity: more diffuse priors can increase
 mass on extremely long durations or initial titres below a threshold.
 
-\subsection*{Model-specific transformations}
+For the exponential, the default median half-life is approximately 54
+days. For the biphasic model, $f$ has mean 0.20 and an approximate 95\%
+range of 0.034--0.403; $q$ has median 16.6 and an approximate 95\% range
+of 4.3--75.8. At $D_a=1.16$, $f=0.20$ and $q=581/35$, the implied
+half-lives are about 35 and 579 days, with a 74-day switching time.
+For the power law, the default approximate 95\% range for $\beta$ is
+0.38--5.91; the broader option gives 0.21--10.65.
 
-\paragraph{Single exponential.}
-No additional free parameter is needed. Set
-\begin{equation}
-  k=D_a/t_a,\qquad c(t)=c_0e^{-kt}.
-  \label{eq:prior-exponential}
-\end{equation}
-The default median half-life is approximately 54 days. The model extends
-this early average log decline indefinitely; its late slope is not adjusted
-to resemble the more flexible families.
-
-\paragraph{Biphasic exponential.}
-Set $f=u_f/2$, $q=1+e^{z_q}$, and write
-\begin{equation}
-  c(t)=c_0\{(1-f)e^{-qst}+fe^{-st}\},\qquad s=k_2,\quad q=k_1/k_2.
-  \label{eq:prior-biphasic}
-\end{equation}
-Here $f$ is the fraction of the initial titre contributed by the slow
-component, rather than a fraction of participants. Given $D_a,f,q$, obtain
-$s>0$ as the unique solution of
-\begin{equation}
-  (1-f)e^{-qst_a}+fe^{-st_a}=R_a.
-  \label{eq:prior-biphasic-root}
-\end{equation}
-The left-hand side decreases continuously from 1 to 0, so a solution exists
-for every allowed draw. This is the same trajectory family as
-Equation~\ref{eq:biphasic}, with
-\begin{equation}
-  h_1=\frac{\log 2}{qs},\qquad h_2=\frac{\log 2}{s},\qquad
-  t_s=\frac{\log\{(1-f)/f\}}{(q-1)s}.
-  \label{eq:prior-biphasic-map}
-\end{equation}
-The restriction $0<f<0.5$ specifies a positive switching time and an
-initially larger fast contribution. Under the default, $f$ has mean 0.20
-and an approximate 95\% range of 0.034--0.403; $q$ has median 16.6 and
-an approximate 95\% range of 4.3--75.8. At $D_a=1.16$, $f=0.20$ and
-$q=581/35$, the implied half-lives are about 35 and 579 days, with a
-74-day switching time. Sample the free variables in
-Table~\ref{tab:priors} and transform them; do not add independent priors on
-$h_1,h_2,t_s$ or $s$.
-
-\paragraph{Power-law decay.}
-Given $D_a$ and $\beta$, set
-\begin{equation}
-  \alpha=\frac{e^{D_a/\beta}-1}{t_a},\qquad
-  c(t)=c_0(1+\alpha t)^{-\beta}.
-  \label{eq:prior-powerlaw}
-\end{equation}
-The default approximate 95\% range for $\beta$ is 0.38--5.91; the
-broader option gives 0.21--10.65. This allows substantial variation in
-deceleration while preserving the common day-90 decline. The prior on
-$\alpha$ is induced by this transformation, not specified independently.
-
-\paragraph{Plateau or set-point.}
-Let $u_\infty$ be the floor as a fraction of the day-90 titre and set
-\begin{align}
-  A_\infty&=u_\infty c_0R_a,\qquad r=A_\infty/c_0, \\
-  k&=-\frac{1}{t_a}\log\!\left(\frac{R_a-r}{1-r}\right),\qquad
-  c(t)=A_\infty+(c_0-A_\infty)e^{-kt}.
-  \label{eq:prior-plateau}
-\end{align}
-Because $0<r<R_a<1$, the rate is positive and the floor lies below the
-day-90 titre. The uniform prior on $u_\infty$ permits crossing both
-thresholds, only the higher threshold, or neither. Under the default
-common priors, the prior non-crossing probabilities are approximately 0.29
-for the symptomatic anchor and 0.83 for the severe anchor. These are prior
-implications of the floor assumption and should be reported alongside
-posterior probabilities, rather than attributed entirely to the data.
+For the plateau, the uniform prior on $u_\infty$ permits all three
+crossing outcomes. Under the default common priors, the prior non-crossing
+probabilities are approximately 0.29 for the symptomatic anchor and 0.83
+for the severe anchor. These are prior implications of the floor assumption
+and should be reported alongside posterior probabilities, rather than
+attributed entirely to the data.
 
 \subsection*{Interpretation and checks before scored runs}
 
