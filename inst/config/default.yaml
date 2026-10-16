@@ -63,6 +63,11 @@ fitting:
     sigma_median: 0.20
     rate_ratio_median: 16.6
     beta_median: 1.5
+    # Handout Table `tab:initial-rate-priors`; default widths/shapes above.
+    initial_rate:
+      rate_median_per_day: 0.0161
+      rate_log_sd: 0.5
+      floor_fraction_beta: [1, 4]
     # Handout Table `tab:two-anchor-priors`; retain early-only options.
     two_anchor:
       later_day: 365

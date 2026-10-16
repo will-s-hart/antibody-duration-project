@@ -53,3 +53,43 @@ test_that("real JAGS fits emit valid draws without truth leakage", {
   repeated <- fit_mcmc(data, "exponential", cfg, sampler = sampler)
   expect_equal(fit$posterior, repeated$posterior)
 })
+
+test_that("initial-rate JAGS curves agree with the independent R transform", {
+  skip_if(!nzchar(Sys.which("jags")), "JAGS command line unavailable")
+  skip_if_not_installed("coda")
+  skip_if_not_installed("posterior")
+  cfg <- read_config()
+  sampler <- cfg$fitting$sampler
+  sampler$adapt <- 100
+  sampler$warmup <- 100
+  sampler$draws <- 200
+  data <- mock_sim_dataset(mock_design_cell(n_participants = 1L))
+  for (model in CANDIDATE_MODELS) {
+    fit <- fit_mcmc(data, model, cfg, prior_set = "initial_rate",
+                     sampler = sampler, compute_loo = FALSE)
+    expect_silent(validate_fit_result(fit))
+    # Monitoring deterministic nodes leaves the sampler's RNG stream intact.
+    command_file <- file.path(fit$work_dir, "run.cmd")
+    commands <- readLines(command_file)
+    at <- which(commands == paste("update", sampler$draws))
+    commands <- append(commands, "monitor mu", after = at - 1L)
+    writeLines(commands, command_file)
+    log_file <- file.path(fit$work_dir, "check.log")
+    status <- system2(Sys.which("jags"), shQuote(command_file),
+                       stdout = log_file, stderr = log_file)
+    expect_equal(status, 0L)
+    chains <- lapply(seq_len(sampler$chains), function(i) {
+      as.matrix(coda::read.coda(
+        file.path(fit$work_dir, paste0("sampleschain", i, ".txt")),
+        file.path(fit$work_dir, "samplesindex.txt"), quiet = TRUE
+      ))
+    })
+    draws <- do.call(rbind, chains)
+    free <- early_free_names(model, "initial_rate")
+    expect_equal(unname(draws[, free]),
+                   unname(as.matrix(fit$posterior[free])))
+    mu <- early_log_curve(fit$native_draws, model, data$obs$time_days)
+    expect_equal(unname(draws[, paste0("mu[", seq_len(ncol(mu)), "]")]),
+                   unname(mu), tolerance = 1e-4)
+  }
+})

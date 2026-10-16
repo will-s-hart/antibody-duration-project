@@ -7,6 +7,7 @@
 # LaTeX auxiliary files (compiled PDFs remain trackable)
 *.aux
 *.bbl
+*.bbl-SAVE-ERROR
 *.bcf
 *.blg
 *.fdb_latexmk

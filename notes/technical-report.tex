@@ -23,7 +23,7 @@
 \title{\textbf{Antibody duration: methodology and initial results}\\[0.3em]
   \large Prior comparisons and repeated single-participant fits}
 \author{}
-\date{15 October 2026}
+\date{16 October 2026}
 
 \begin{document}
 \maketitle
@@ -85,14 +85,15 @@ Let $t_a=90$ and define
 \begin{equation}
   D_a=-\log\{c(t_a)/c_0\}>0,\qquad R_a=e^{-D_a}.
 \end{equation}
-All four specifications share the appropriate default/broader column in
-Table~\ref{tab:common}. $N(\mu,s^2)$ denotes a normal distribution with
+The day-90 and two-anchor specifications share the appropriate
+default/broader column in Table~\ref{tab:common}.
+$N(\mu,s^2)$ denotes a normal distribution with
 standard deviation $s$. All free variables are independent within a model;
 no additional priors are assigned to derived parameters.
 
 \begin{table}[H]
 \centering\small
-\caption{Common priors in both formulations.}
+\caption{Common priors in the day-90 and two-anchor formulations.}
 \label{tab:common}
 \reporttable{common-priors}
 \end{table}
@@ -116,8 +117,8 @@ The equation has a unique $s>0$. Here $f<0.5$ and $t_s>0$.
 
 \paragraph{Plateau.} With free $u_\infty\in(0,1)$, set
 \begin{equation}
-  A_\infty=u_\infty c_0R_a,\qquad r=A_\infty/c_0,\qquad
-  k=-t_a^{-1}\log\!\left(\frac{R_a-r}{1-r}\right).
+  A_\infty=u_\infty c_0R_a,\qquad p=A_\infty/c_0,\qquad
+  k=-t_a^{-1}\log\!\left(\frac{R_a-p}{1-p}\right).
 \end{equation}
 
 \begin{table}[H]
@@ -171,13 +172,48 @@ The reference curve gives $D_a\simeq1.16$, $\rho\simeq0.25$ and
 $u_s\simeq0.37$. Priors are fixed across reviews. The day-365 anchor
 is a latent parameter, not an added observation.
 
+\subsection{Initial-rate formulation}
+Replace $D_a$ by the initial log-decay rate
+\begin{equation}
+  r=-c'(0)/c_0>0,\qquad c(t)=c_0\{1-rt+O(t^2)\}.
+\end{equation}
+With $p=A_\infty/c_0$, the transformations are
+\begin{align}
+  \text{Exponential:}\quad k&=r,\\
+  \text{Biphasic:}\quad f&=u_f/2,\quad q=1+e^{z_q},\quad
+    k_2=\frac{r}{(1-f)q+f},\quad k_1=qk_2,\\
+  \text{Power law:}\quad \alpha&=r/\beta,\\
+  \text{Plateau:}\quad A_\infty&=pc_0,\quad k=r/(1-p).
+\end{align}
+Every family shares the joint prior on $c_0,r$, without root solves.
+The day-90 titre is derived and need not agree between models.
+Here $f<0.5$ and $t_s>0$.
+
+\begin{table}[H]
+\centering\small
+\caption{Initial-rate priors: independent free variables; no additional
+prior on $D_a$ or either later anchor.}
+\label{tab:rate}
+\reporttable{initial-rate-priors}
+\end{table}
+The reference curve has $r=0.0161103$ days$^{-1}$; the prior uses its
+rounded value. The other widths and the $f,q,\beta$ priors retain the
+early-only default. The plateau prior has median $p\simeq0.159$, close
+to $0.5e^{-1.16}\simeq0.157$ at the early-only default's parameter
+centres; the floor distributions are not identical. This choice replaces
+a uniform floor fraction, which would give severe non-crossing
+probability 0.967 conditional on $c_0=0.92$.
+
 \section{Pilot design and computation}
 One participant is simulated from the biphasic calibration in
 Table~\ref{tab:calibration}. The \ObservationCount{} measurements are at
 $t_j=\operatorname{round}(365.25j/12)$, $j=0,\ldots,24$; the same noisy
 history is truncated at 91, 183, 274, 365, 548 and 730 days (labelled
 3, 6, 9, 12, 18 and 24 months). All four models are fitted under each
-of the four prior specifications. True individual crossing times are
+of four displayed prior specifications: day-90 default and broader,
+two-anchor default, and initial-rate default. The previously fitted
+broader two-anchor option is omitted from the figures for space.
+True individual crossing times are
 \TruthSym{} days (symptomatic) and \TruthSev{} days (severe).
 
 JAGS 5.0.0 uses four chains, initially 2,000 adaptation, 2,000 warm-up
@@ -191,7 +227,7 @@ replicate, model, prior specification and chain.
 
 Intervals below are equal-tailed 90\% posterior intervals. Non-crossing
 draws remain at $\infty$. Prior curves use 4,000 draws per family and
-specification; common RNG streams match the shared anchors. Extreme
+specification; common RNG streams match the shared parameters. Extreme
 power-law prior durations are summarised on log time. Subsequent-visit
 predictions are evaluated only after fitting, using
 \begin{equation}
@@ -204,23 +240,24 @@ PSIS-LOO is descriptive; Pareto-$k>0.7$ flags unreliability and it does
 not validate long-term extrapolation.
 
 \section{Initial results}
-\paragraph{Computation.} Of 96 labelled model--prior--review combinations,
+\paragraph{Computation.} Of \PlannedCount{} displayed
+model--prior--review combinations,
 \FitCount{} completed and all \ConvergedCount{} passed the declared checks,
-across \AttemptsCount{} sampling attempts including the numerical failure
-below. The two formulations
-give identical exponential posterior draws within each prior width.
-The broader two-anchor power law at three months failed to emit a valid
-duration result because some finite crossing times exceeded floating-point
-range. Its raw sampler output is retained; it is marked as missing rather
-than recoded as non-crossing. Only \ReliableLooCount{} of \FitCount{}
+across \AttemptsCount{} sampling attempts, with \FailureCount{} missing
+results. The initial-rate set contributes \RateFitCount{} fits, all
+\RateConvergedCount{} passing the checks. The day-90 and two-anchor
+default give identical exponential draws; the initial-rate exponential
+has a different prior. Only \ReliableLooCount{} of \FitCount{}
 completed fits had reliable pointwise PSIS-LOO diagnostics.
 
 \paragraph{Prior implications.} Matching the first-year anchors leaves
 substantial tail disagreement (Figures~\ref{fig:priors} and
 \ref{fig:non-cross}). The two-anchor power-law severe-duration prior has
-an approximate 95th percentile of $1.0\times10^{11}$ days (default) or
-$3.6\times10^{26}$ days (broader). These exploratory priors require
-further tail calibration before a main simulation study.
+an approximate 95th percentile of $1.0\times10^{11}$ days (default).
+Matching $r$ aligns only the initial tangent, not the day-90 titres.
+Under the initial-rate prior, the plateau non-crossing probabilities are
+\RatePriorNoCrossSym{} (symptomatic) and \RatePriorNoCrossSev{} (severe).
+These exploratory priors require further tail calibration.
 
 \paragraph{Posterior duration.} The exponential estimates the severe
 crossing too early under every specification, with intervals excluding
@@ -228,6 +265,9 @@ the true crossing (Figure~\ref{fig:duration}). At 24 months its default estimate
 \EarlyDefaultExp{} days, below the true \TruthSev{} days. Under the
 early-only default prior the biphasic estimate is \EarlyDefaultBip{};
 under the two-anchor default it is \AnchorDefaultBip{}.
+Under the initial-rate prior it is \RateDefaultBip{}, compared with
+\RateDefaultExp{} for the exponential and \RateDefaultPower{} for
+the power law.
 All four biphasic intervals contain the true severe crossing. The four
 power-law intervals at 24 months exclude it from above. The plateau
 assigns probability one, to reported precision, to no severe crossing
@@ -244,12 +284,13 @@ containment here is not an estimate of empirical coverage.
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{prior-trajectories.pdf}
-\caption{\textbf{Prior latent trajectories for all four specifications.}
+\caption{\textbf{Prior latent trajectories for the four displayed specifications.}
 Lines show medians and shading 90\% pointwise intervals. Rows identify the
 prior formulation and width; columns identify the model. Dashed lines
 are the two thresholds; dotted lines mark days 90 and 365. The
-exponential shares only the initial/day-90 priors. The two-anchor
-flexible families additionally share the day-365 prior.}
+day-90 rows share the initial/day-90 priors; the two-anchor flexible
+families additionally share the day-365 prior. The initial-rate row
+shares only the initial titre and initial log-decay rate.}
 \label{fig:priors}
 \end{figure}
 
@@ -260,9 +301,9 @@ flexible families additionally share the day-365 prior.}
 posterior medians and bars are 90\% intervals; horizontal dashed lines
 show generating truth. The display is capped at 20 years: ``Inf'' denotes
 an infinite upper limit, ``$>$'' a finite upper limit beyond the cap, and
-an open triangle at the cap an infinite median. The cross near the bottom
-marks the failed broader two-anchor power-law fit at three months. The
-two exponential rows of each width are identical.}
+an open triangle at the cap an infinite median. The day-90 default and
+two-anchor default exponential rows are identical; the initial-rate
+exponential uses a different prior.}
 \label{fig:duration}
 \end{figure}
 
@@ -273,9 +314,7 @@ two exponential rows of each width are identical.}
 Lines are medians and shading 90\% pointwise intervals. Black dashed
 curves are the generating trajectory; black points are observations
 available at that review. Dotted lines show the thresholds. Columns
-select four reviews; rows show all four prior specifications. The
-three-month broader two-anchor power-law curve is omitted because its
-duration output failed.}
+select four reviews; rows show the four displayed prior specifications.}
 \label{fig:posterior}
 \end{figure}
 
@@ -286,8 +325,7 @@ duration output failed.}
 Open diamonds show prior probabilities; filled points show posterior
 probabilities at successive reviews. All positive-rate exponential,
 biphasic and power-law draws eventually cross; the plateau permits a
-genuine non-crossing outcome. The failed broader two-anchor power-law
-fit at three months has no posterior point. These probabilities retain
+genuine non-crossing outcome. These probabilities retain
 the infinite-duration mass omitted by a finite-only summary.}
 \label{fig:non-cross}
 \end{figure}
@@ -299,8 +337,7 @@ the infinite-duration mass omitted by a finite-only summary.}
 the mean log predictive density of observed log titres between the
 indicated review and the next review; higher is better. The four panels
 use identical observations and evaluation windows. No score is available
-after the final 24-month review. The failed three-month broader
-two-anchor power-law fit is omitted. These scores concern near-term
+after the final 24-month review. These scores concern near-term
 prediction, not validation of the severe crossing time.}
 \label{fig:future}
 \end{figure}
@@ -313,6 +350,7 @@ From the repository root, run the fitting studies and report assemblers:
 \begin{verbatim}
 Rscript scripts/01-prior-pilot.R
 Rscript scripts/01-prior-pilot.R --two-anchor
+Rscript scripts/01-prior-pilot.R --initial-rate
 Rscript scripts/03-technical-report.R
 Rscript scripts/04-repeated-study.R
 Rscript scripts/05-repeated-report.R

@@ -89,7 +89,21 @@ the other three families share the joint prior on initial, day-90 and
 day-365 latent titres. See the handout for the remaining biphasic parameter
 and the explicit relaxation of the initial component-weight restriction.
 
-For a compact LaTeX technical report covering all four prior specifications,
+The initial-rate sensitivity instead matches $c_0$ and
+$r=-c'(0)/c_0$, with biphasic free variables $(r,f,q)$ and $q=k_1/k_2$.
+Run it on the same individual and reviews with:
+
+```sh
+Rscript scripts/01-prior-pilot.R --initial-rate
+```
+
+Its validated fits and summaries are saved under
+`cache/prior-pilot-initial-rate/` and `results/prior-pilot-initial-rate/`.
+The plateau floor fraction uses Beta(1,4); the full specification and its
+reference calibration are in the handout.
+
+For a compact LaTeX technical report comparing the day-90 default and
+broader, two-anchor default and initial-rate priors,
 assemble the completed pilot outputs and compile from `notes/`:
 
 ```sh

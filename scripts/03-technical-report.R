@@ -1,28 +1,45 @@
 #!/usr/bin/env Rscript
-# Assemble report figures and small tables from the two completed pilots.
+# Assemble report figures and small tables from the three completed pilots.
 # Run the fitting scripts first; this script never fits or simulates data.
 suppressMessages(pkgload::load_all(quiet = TRUE))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(dplyr))
 
 paths <- c("results/prior-pilot/pilot.rds",
-            "results/prior-pilot-two-anchor/pilot.rds")
-if (!all(file.exists(paths))) stop("Run both prior pilots first")
+            "results/prior-pilot-two-anchor/pilot.rds",
+            "results/prior-pilot-initial-rate/pilot.rds")
+if (!all(file.exists(paths))) stop("Run all three prior pilots first")
 pilots <- lapply(paths, readRDS)
-stopifnot(identical(pilots[[1]]$complete$obs, pilots[[2]]$complete$obs),
-          identical(pilots[[1]]$truth_days, pilots[[2]]$truth_days))
+stopifnot(all(vapply(pilots, function(p) {
+  identical(pilots[[1]]$complete$obs, p$complete$obs) &&
+    identical(pilots[[1]]$truth_days, p$truth_days)
+}, logical(1))))
 for (p in pilots) {
   validate_sim_dataset(p$complete)
   validate_score_rows(p$scores)
   invisible(lapply(p$fits, validate_fit_result))
 }
-cfg <- pilots[[2]]$cfg
+cfg <- pilots[[3]]$cfg
 out <- "results/technical-report"
 dir.create(file.path(out, "figures"), recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(out, "tables"), recursive = TRUE, showWarnings = FALSE)
-sets <- c("default", "broader", "anchored_default", "anchored_broader")
-labels <- c("Early only\ndefault", "Early only\nbroader",
-             "Two anchors\ndefault", "Two anchors\nbroader")
+sets <- c("default", "broader", "anchored_default", "initial_rate")
+labels <- c("Day 90\ndefault", "Day 90\nbroader",
+             "Two anchors\ndefault", "Initial rate\ndefault")
+# Keep four rows legible; the broader two-anchor pilot remains saved.
+pilots <- lapply(pilots, function(p) {
+  p$fits <- Filter(function(f) f$prior_set %in% sets, p$fits)
+  p$scores <- p$scores[p$scores$prior_set %in% sets, ]
+  p$future <- p$future[p$future$prior_set %in% sets, ]
+  keep_key <- function(key) {
+    vapply(key, function(k) any(vapply(sets, function(set) {
+      grepl(paste0("-", set, "-"), k, fixed = TRUE)
+    }, logical(1))), logical(1))
+  }
+  p$attempts <- p$attempts[keep_key(p$attempts$key), ]
+  p$failures <- p$failures[keep_key(p$failures$key), ]
+  p
+})
 models <- c("exponential", "biphasic", "powerlaw", "plateau")
 model_labels <- c("Exponential", "Biphasic", "Power law", "Plateau")
 colours <- setNames(c("#C44335", "#176B9B", "#7B5196", "#2D8263"), models)
@@ -123,11 +140,17 @@ scores$upper <- ifelse(is.infinite(scores$tstar_hi), "Inf",
 truth <- data.frame(endpoint = levels(scores$endpoint),
                        value = as.numeric(pilots[[1]]$truth_days))
 truth$endpoint <- factor(truth$endpoint, levels = levels(scores$endpoint))
-failed <- decorate(data.frame(prior_set = "anchored_broader",
-                                model = "powerlaw"))
-failed <- merge(failed, data.frame(endpoint = levels(scores$endpoint)))
+planned <- expand.grid(prior_set = sets, model = models,
+                        followup_days = cfg$design$followup_days,
+                        stringsAsFactors = FALSE)
+failed <- anti_join(planned, scores,
+                     by = c("prior_set", "model", "followup_days"))
+failed <- decorate(merge(failed,
+                          data.frame(endpoint = levels(scores$endpoint))))
 failed$endpoint <- factor(failed$endpoint, levels = levels(scores$endpoint))
-failed$x <- 3 + offset["powerlaw"]
+failed$x <- cfg$design$followup_months[
+  match(failed$followup_days, cfg$design$followup_days)
+] + offset[as.character(failed$model)]
 duration_plot <- ggplot(scores, aes(x, med, colour = model)) +
   geom_hline(data = truth, aes(yintercept = value), inherit.aes = FALSE,
                  linetype = "dashed", colour = "grey40", linewidth = .35) +
@@ -238,7 +261,7 @@ write_rows <- function(rows, name) {
     "\\bottomrule", "\\end{tabularx}"),
     file.path(out, "tables", paste0(name, ".tex")))
 }
-ep <- pilots[[1]]$cfg$fitting$priors
+ep <- cfg$fitting$priors
 ap <- cfg$fitting$priors$two_anchor
 calibration <- rbind(
   c("Initial titre $c_0$", fmt(b$c0), "Hogan et al. (2023)"),
@@ -290,6 +313,22 @@ anchors <- rbind(
        beta(unlist(ap$broader$slow_rate_fraction_beta)))
 )
 write_rows(anchors, "two-anchor-priors")
+rp <- ep$initial_rate
+rate_rows <- rbind(
+  c("$\\log c_0$", normal(paste0("\\log ", ep$c0_median),
+                            ep$default$c0_log_sd)),
+  c("$\\log r$ (days$^{-1}$)",
+       normal(paste0("\\log ", rp$rate_median_per_day), rp$rate_log_sd)),
+  c("$\\log\\sigma_{\\log}$", normal(paste0("\\log ", ep$sigma_median),
+                                        ep$default$sigma_log_sd)),
+  shapes[1:3, 1:2],
+  c("Plateau: $p$", beta(unlist(rp$floor_fraction_beta)))
+)
+writeLines(c("\\begin{tabularx}{\\textwidth}{@{}lX@{}}",
+  "\\toprule Free variable & Prior \\\\ \\midrule",
+  paste0(apply(rate_rows, 1, paste, collapse = " & "), " \\\\"),
+  "\\bottomrule", "\\end{tabularx}"),
+  file.path(out, "tables", "initial-rate-priors.tex"))
 
 # A small macro file keeps reported counts and selected findings tied to
 # the saved fits, without duplicating large numerical tables in the report.
@@ -299,6 +338,8 @@ macro <- function(name, value) {
 macros <- c(macro("TruthSym", sprintf("%.1f", pilots[[1]]$truth_days[1])),
   macro("TruthSev", sprintf("%.1f", pilots[[1]]$truth_days[2])),
   macro("FitCount", length(fits)),
+  macro("PlannedCount", nrow(planned)),
+  macro("FailureCount", nrow(failed) / length(levels(scores$endpoint))),
   macro("ConvergedCount", sum(vapply(fits, function(f) {
     f$diagnostics$converged
   }, logical(1)))),
@@ -311,7 +352,7 @@ macros <- c(macro("TruthSym", sprintf("%.1f", pilots[[1]]$truth_days[1])),
 for (set in sets) {
   tag <- c(default = "EarlyDefault", broader = "EarlyBroader",
              anchored_default = "AnchorDefault",
-             anchored_broader = "AnchorBroader")[[set]]
+             initial_rate = "RateDefault")[[set]]
   for (model in c("exponential", "biphasic", "powerlaw")) {
     z <- scores[scores$prior_set == set &
                   scores$model == model & scores$followup_days == 730 &
@@ -321,6 +362,18 @@ for (set in sets) {
       exponential = "Exp", biphasic = "Bip", powerlaw = "Power")), value))
   }
 }
+rate_plateau <- prior_times[prior_times$prior_set == "initial_rate" &
+                             prior_times$model == "plateau", ]
+for (endpoint in c("symptomatic", "severe")) {
+  macros <- c(macros, macro(paste0("RatePriorNoCross",
+    if (endpoint == "symptomatic") "Sym" else "Sev"), sprintf("%.2f",
+      rate_plateau$prob_no_cross[rate_plateau$endpoint == endpoint])))
+}
+rate_fits <- Filter(function(f) f$prior_set == "initial_rate", fits)
+macros <- c(macros, macro("RateFitCount", length(rate_fits)),
+  macro("RateConvergedCount", sum(vapply(rate_fits, function(f) {
+    f$diagnostics$converged
+  }, logical(1)))))
 writeLines(macros, file.path(out, "tables", "results-macros.tex"))
 write.csv(prior_times, file.path(out, "prior-duration-checks.csv"),
               row.names = FALSE)

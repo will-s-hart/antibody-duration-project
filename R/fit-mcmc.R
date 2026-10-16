@@ -64,6 +64,12 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
     D_mean = log(p$decline_median), D_prec = 1 / p$decline_log_sd^2,
     sigma_mean = log(p$sigma_median), sigma_prec = 1 / p$sigma_log_sd^2
   )
+  if (p$initial_rate) {
+    jdata$D_mean <- NULL
+    jdata$D_prec <- NULL
+    jdata$rate_mean <- log(p$rate_median_per_day)
+    jdata$rate_prec <- 1 / p$rate_log_sd^2
+  }
   if (anchored) {
     jdata <- c(jdata, list(m = p$later_day / p$reference_day,
                            rho_mean = qlogis(p$rho_median),
@@ -268,6 +274,28 @@ fit_mcmc <- function(data, model = "biphasic", cfg, engine = "jags",
   )
   if (startsWith(prior_set, "anchored_") && model != "exponential") {
     shape <- .two_anchor_jags_shape(model)
+  }
+  if (prior_set == "initial_rate") {
+    shared <- "log_c0 ~ dnorm(c0_mean, c0_prec)
+      log_rate ~ dnorm(rate_mean, rate_prec)
+      log_sigma ~ dnorm(sigma_mean, sigma_prec)
+      rate <- exp(log_rate)
+      sigma <- exp(log_sigma)
+      tau <- exp(-2 * log_sigma)"
+    shape <- switch(model,
+      exponential = "k <- rate",
+      biphasic = "u_f ~ dbeta(f_a, f_b)
+        z_q ~ dnorm(q_mean, q_prec)
+        f <- u_f / 2
+        q <- 1 + exp(z_q)
+        s <- rate / ((1-f)*q+f)",
+      powerlaw = "log_beta ~ dnorm(beta_mean, beta_prec)
+        beta <- exp(log_beta)
+        log_alpha <- log_rate-log_beta",
+      plateau = "u_inf ~ dbeta(u_a, u_b)
+        log_r <- log(u_inf)
+        k <- rate/(1-u_inf)"
+    )
   }
   curve <- switch(model,
     exponential = "mu[i] <- log_c0 - k*t[i]",

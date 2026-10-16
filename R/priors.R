@@ -3,9 +3,11 @@
 
 early_prior <- function(cfg, prior_set = "default") {
   prior_set <- match.arg(prior_set, c("default", "broader",
-                                     "anchored_default", "anchored_broader"))
+    "anchored_default", "anchored_broader", "initial_rate"))
+  initial_rate <- prior_set == "initial_rate"
   anchored <- startsWith(prior_set, "anchored_")
   prior_set <- sub("^anchored_", "", prior_set)
+  if (initial_rate) prior_set <- "default"
   p <- cfg$fitting$priors
   if (is.null(p[[prior_set]])) stop("Missing fitting prior configuration")
   out <- c(p[c("reference_day", "c0_median", "decline_median", "sigma_median",
@@ -13,6 +15,11 @@ early_prior <- function(cfg, prior_set = "default") {
   out$slow_fraction_beta <- unlist(out$slow_fraction_beta)
   out$floor_fraction_beta <- unlist(out$floor_fraction_beta)
   out$two_anchor <- anchored
+  out$initial_rate <- initial_rate
+  if (initial_rate) {
+    out[names(p$initial_rate)] <- p$initial_rate
+    out$floor_fraction_beta <- unlist(out$floor_fraction_beta)
+  }
   if (anchored) {
     a <- p$two_anchor
     out <- c(out, a[c("later_day", "rho_median")], a[[prior_set]])
@@ -22,6 +29,13 @@ early_prior <- function(cfg, prior_set = "default") {
 }
 
 early_free_names <- function(model, prior_set = "default") {
+  if (prior_set == "initial_rate") {
+    return(c("log_c0", "log_rate", "log_sigma", switch(
+      match.arg(model, CANDIDATE_MODELS),
+      exponential = character(), biphasic = c("u_f", "z_q"),
+      powerlaw = "log_beta", plateau = "u_inf"
+    )))
+  }
   if (startsWith(prior_set, "anchored_") && model != "exponential") {
     return(c("log_c0", "log_D", "log_sigma", "z_rho",
              if (model == "biphasic") "u_s"))
@@ -41,6 +55,13 @@ draw_early_prior <- function(model, cfg, prior_set, n, seed) {
       log_D = rnorm(n, log(p$decline_median), p$decline_log_sd),
       log_sigma = rnorm(n, log(p$sigma_median), p$sigma_log_sd)
     )
+    if (p$initial_rate) {
+      # Use the second common RNG stream for the shared rate, not a decline.
+      x$log_rate <- log(p$rate_median_per_day) +
+        (x$log_D - log(p$decline_median)) *
+        p$rate_log_sd / p$decline_log_sd
+      x$log_D <- NULL
+    }
     if (p$two_anchor && model != "exponential") {
       x$z_rho <- rnorm(n, qlogis(p$rho_median), p$rho_logit_sd)
       if (model == "biphasic") {
@@ -78,6 +99,9 @@ draw_early_prior <- function(model, cfg, prior_set, n, seed) {
 early_transform <- function(draws, model, reference_day = 90,
                             later_day = 365) {
   d <- as.data.frame(draws)
+  if ("log_rate" %in% names(d)) {
+    return(.initial_rate_transform(d, model, reference_day))
+  }
   if ("z_rho" %in% names(d) && model != "exponential") {
     return(.two_anchor_transform(d, model, reference_day, later_day))
   }
@@ -119,6 +143,39 @@ early_transform <- function(draws, model, reference_day = 90,
   }
   if (anyNA(x) || any(vapply(x, function(z) any(!is.finite(z)), logical(1)))) {
     stop("Non-finite derived parameter; do not silently discard this draw")
+  }
+  x
+}
+
+.initial_rate_transform <- function(d, model, reference_day) {
+  missing <- setdiff(early_free_names(model, "initial_rate"), names(d))
+  if (length(missing)) stop("Missing initial-rate free parameters")
+  x <- data.frame(c0 = exp(d$log_c0), rate = exp(d$log_rate),
+                  sigma = exp(d$log_sigma))
+  if (model == "exponential") x$k <- x$rate
+  if (model == "biphasic") {
+    x$f <- d$u_f / 2
+    x$q <- 1 + exp(d$z_q)
+    x$k2 <- x$rate / ((1 - x$f) * x$q + x$f)
+    x$k1 <- x$q * x$k2
+    x$h1 <- log(2) / x$k1
+    x$h2 <- log(2) / x$k2
+    x$ts <- (log1p(-x$f) - log(x$f)) / (x$k1 - x$k2)
+  }
+  if (model == "powerlaw") {
+    x$beta <- exp(d$log_beta)
+    x$log_alpha <- d$log_rate - d$log_beta
+    x$alpha <- exp(x$log_alpha)
+  }
+  if (model == "plateau") {
+    x$log_r <- log(d$u_inf)
+    x$A_inf <- x$c0 * d$u_inf
+    x$k <- x$rate / (1 - d$u_inf)
+  }
+  x$D <- as.numeric(log(x$c0) -
+                       early_log_curve(x, model, reference_day))
+  if (anyNA(x) || any(vapply(x, function(z) any(!is.finite(z)), logical(1)))) {
+    stop("Non-finite initial-rate parameter; no draws may be discarded")
   }
   x
 }
